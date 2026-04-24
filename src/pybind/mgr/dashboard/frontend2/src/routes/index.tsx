@@ -14,6 +14,10 @@ import { CrushMapPage } from '@/features/cluster/crush/pages/crush-map';
 import { ServiceListPage } from '@/features/cluster/services/pages/service-list';
 import { ModuleListPage } from '@/features/cluster/mgr-modules/pages/module-list';
 import { LogsPage } from '@/features/cluster/log-viewer/pages/logs';
+import { RbdListPage } from '@/features/block/rbd/pages/rbd-list';
+import { RbdTrashPage } from '@/features/block/rbd/pages/rbd-trash';
+import { MirroringOverviewPage } from '@/features/block/mirroring/pages/mirroring-overview';
+import { IscsiOverviewPage } from '@/features/block/iscsi/pages/iscsi-overview';
 
 export const router = createHashRouter([
   {
@@ -56,9 +60,10 @@ export const router = createHashRouter([
       { path: 'monitoring', element: <PageWrapper title="Monitoring" /> },
       { path: 'pools', element: <PageWrapper title="Pools" /> },
       { path: 'block', element: <PageWrapper title="Block" /> },
-      { path: 'block/rbd', element: <PageWrapper title="RBD Images" /> },
-      { path: 'block/mirroring', element: <PageWrapper title="Mirroring" /> },
-      { path: 'block/iscsi', element: <PageWrapper title="iSCSI" /> },
+      { path: 'block/rbd', element: <RbdListPage /> },
+      { path: 'block/rbd/trash', element: <RbdTrashPage /> },
+      { path: 'block/mirroring', element: <MirroringOverviewPage /> },
+      { path: 'block/iscsi', element: <IscsiOverviewPage /> },
       { path: 'nfs', element: <PageWrapper title="NFS" /> },
       { path: 'cephfs', element: <PageWrapper title="CephFS" /> },
       { path: 'rgw', element: <PageWrapper title="Object Gateway" /> },

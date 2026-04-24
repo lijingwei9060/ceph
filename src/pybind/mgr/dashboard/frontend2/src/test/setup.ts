@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import '@/i18n';
+import { vi } from 'vitest';
 
 // Mock the api-client module to prevent real HTTP calls in tests
 vi.mock('@/lib/api-client', () => ({
