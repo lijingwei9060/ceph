@@ -37,7 +37,7 @@ export function WorkbenchLayout() {
   const healthStatus = summary?.health_status;
   const healthColor = getHealthColor(healthStatus);
 
-  function renderNavItem(item: NavItem, depth = 0) {
+  function renderNavItem(item: NavItem, depth = 0): React.ReactNode {
     if (!isItemVisible(item, hasPermission, featureToggles)) return null;
     if (item.children) {
       return (
@@ -49,9 +49,9 @@ export function WorkbenchLayout() {
             {item.icon && <span className="text-xs">{item.icon}</span>}
             <span>{item.label}</span>
           </SidebarMenuButton>
-          <SidebarMenuItem>
-            {item.children.map((child) => renderNavItem(child, depth + 1)).filter(Boolean)}
-          </SidebarMenuItem>
+          <div className="ml-4">
+            {item.children.map((child) => renderNavItem(child, depth + 1))}
+          </div>
         </SidebarMenuItem>
       );
     }
