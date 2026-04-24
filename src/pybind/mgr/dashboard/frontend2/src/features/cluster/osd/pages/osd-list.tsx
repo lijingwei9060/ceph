@@ -31,10 +31,17 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
+function formatBytes(bytes: number): string {
+  if (bytes >= 1e12) return `${(bytes / 1e12).toFixed(1)} TB`;
+  if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(1)} GB`;
+  if (bytes >= 1e6) return `${(bytes / 1e6).toFixed(1)} MB`;
+  return `${(bytes / 1e3).toFixed(1)} KB`;
+}
+
 function OsdStatusBadge({ osd }: { osd: Osd }) {
   const states = osd.state || [];
-  const isUp = osd.up;
-  const isIn = osd.in;
+  const isUp = !!osd.up;
+  const isIn = !!osd.in;
 
   if (!isUp && !isIn) {
     return <Badge variant="destructive">Down & Out</Badge>;
@@ -78,47 +85,48 @@ export function OsdListPage() {
       cell: ({ row }) => <OsdStatusBadge osd={row.original} />,
     },
     {
-      accessorKey: 'host',
+      id: 'host',
       header: 'Host',
-      cell: ({ row }) => row.original.host || '-',
+      cell: ({ row }) => row.original.host?.name || '-',
     },
     {
-      accessorKey: 'device_class',
+      id: 'device_class',
       header: 'Class',
       cell: ({ row }) => (
-        <Badge variant="outline">{row.original.device_class || 'unknown'}</Badge>
+        <Badge variant="outline">{row.original.tree?.device_class || 'unknown'}</Badge>
       ),
     },
     {
-      accessorKey: 'weight',
+      id: 'crush_weight',
       header: 'CRUSH Weight',
-      cell: ({ row }) => row.original.crush_weight?.toFixed(3) ?? '-',
+      cell: ({ row }) => row.original.tree?.crush_weight?.toFixed(3) ?? '-',
     },
     {
-      accessorKey: 'stats.kb_used',
+      id: 'stat_bytes_used',
       header: 'Used',
       cell: ({ row }) => {
-        const used = row.original.stats?.kb_used;
+        const used = row.original.stats?.stat_bytes_used;
         if (!used) return '-';
-        return `${(used / 1024 / 1024).toFixed(1)} GB`;
+        return formatBytes(used);
       },
     },
     {
-      accessorKey: 'stats.kb_avail',
+      id: 'stat_bytes_avail',
       header: 'Available',
       cell: ({ row }) => {
-        const avail = row.original.stats?.kb_avail;
-        if (!avail) return '-';
-        return `${(avail / 1024 / 1024).toFixed(1)} GB`;
+        const total = row.original.stats?.stat_bytes;
+        const used = row.original.stats?.stat_bytes_used;
+        if (!total) return '-';
+        const avail = total - (used ?? 0);
+        return formatBytes(avail);
       },
     },
     {
       id: 'utilization',
       header: 'Usage %',
       cell: ({ row }) => {
-        const used = row.original.stats?.kb_used ?? 0;
-        const avail = row.original.stats?.kb_avail ?? 0;
-        const total = used + avail;
+        const total = row.original.stats?.stat_bytes ?? 0;
+        const used = row.original.stats?.stat_bytes_used ?? 0;
         if (!total) return '-';
         const pct = (used / total) * 100;
         return (

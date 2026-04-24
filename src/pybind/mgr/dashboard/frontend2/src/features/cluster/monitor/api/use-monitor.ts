@@ -1,27 +1,26 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 
-export interface Monitor {
+export interface MonitorStatus {
   name: string;
   rank: number;
-  addr: string;
-  public_addr?: string;
-  cluster_addr?: string;
-}
-
-export interface MonitorStatus {
-  mon_status: {
-    monmap: {
-      mons: Array<{
-        rank: number;
-        name: string;
-        addr: string;
-      }>;
-    };
-    quorum: number[];
+  state: string;
+  election_epoch: number;
+  quorum: number[];
+  quorum_age: number;
+  outside_quorum: string[];
+  monmap: {
+    epoch: number;
+    fsid: string;
+    mons: Array<{
+      rank: number;
+      name: string;
+      addr: string;
+      public_addrs?: { addrvec: Array<{ type: string; addr: string }> };
+      priority?: number;
+      weight?: number;
+    }>;
   };
-  in_quorum: number[];
-  out_quorum: number[];
 }
 
 export function useMonitors() {

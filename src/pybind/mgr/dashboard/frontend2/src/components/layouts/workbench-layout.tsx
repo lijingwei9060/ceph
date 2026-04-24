@@ -72,49 +72,47 @@ export function WorkbenchLayout() {
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen w-full">
-        <Sidebar>
-          <SidebarHeader className="border-b px-4 py-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-sidebar-primary">
-                {t('auth.loginTitle')}
-              </h2>
-              {healthStatus && (
-                <Badge variant="outline" className={cn('text-xs', healthColor)}>
-                  {healthStatus.replace('HEALTH_', '')}
-                </Badge>
-              )}
-            </div>
-          </SidebarHeader>
-          <SidebarContent>
-            <SidebarGroup>
-              <SidebarMenu>
-                {NAV_CONFIG.map((item) => renderNavItem(item)).filter(Boolean)}
-              </SidebarMenu>
-            </SidebarGroup>
-          </SidebarContent>
-        </Sidebar>
-        <SidebarInset>
-          <header className="flex h-12 items-center justify-between border-b px-4">
-            <div className="flex items-center gap-2">
-              <SidebarTrigger />
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm">
-                <Bell className="h-4 w-4" />
-              </Button>
-              <div className="text-sm text-muted-foreground">{username}</div>
-              <Button variant="ghost" size="sm" onClick={() => logout()}>
-                <LogOut className="mr-1 h-4 w-4" />
-                {t('common.logout')}
-              </Button>
-            </div>
-          </header>
-          <main className="flex-1 overflow-auto p-4">
-            <Outlet />
-          </main>
-        </SidebarInset>
-      </div>
+      <Sidebar>
+        <SidebarHeader className="border-b px-4 py-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-sidebar-primary">
+              {t('auth.loginTitle')}
+            </h2>
+            {healthStatus && (
+              <Badge variant="outline" className={cn('text-xs', healthColor)}>
+                {healthStatus.replace('HEALTH_', '')}
+              </Badge>
+            )}
+          </div>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarMenu>
+              {NAV_CONFIG.map((item) => renderNavItem(item)).filter(Boolean)}
+            </SidebarMenu>
+          </SidebarGroup>
+        </SidebarContent>
+      </Sidebar>
+      <SidebarInset>
+        <header className="flex h-12 items-center justify-between border-b px-4">
+          <div className="flex items-center gap-2">
+            <SidebarTrigger />
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm">
+              <Bell className="h-4 w-4" />
+            </Button>
+            <div className="text-sm text-muted-foreground">{username}</div>
+            <Button variant="ghost" size="sm" onClick={() => logout()}>
+              <LogOut className="mr-1 h-4 w-4" />
+              {t('common.logout')}
+            </Button>
+          </div>
+        </header>
+        <main className="flex-1 overflow-auto p-4">
+          <Outlet />
+        </main>
+      </SidebarInset>
       <MotdToast />
       <Toaster />
     </SidebarProvider>

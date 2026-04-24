@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/use-auth';
-import { apiClient } from '@/lib/api-client';
+import { uiApiClient } from '@/lib/api-client';
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Username is required'),
@@ -33,7 +33,7 @@ export function LoginPage() {
   });
 
   useEffect(() => {
-    apiClient.get('ui-api/login/custom_banner').text().then(setBanner).catch(() => {});
+    uiApiClient.get('login/custom_banner').text().then(setBanner).catch(() => {});
   }, []);
 
   const onSubmit = async (data: LoginForm) => {

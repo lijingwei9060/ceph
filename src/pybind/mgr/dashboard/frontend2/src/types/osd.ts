@@ -1,47 +1,54 @@
-export interface Osd {
-  osd: number;
-  uuid: string;
-  up: boolean;
-  in: boolean;
-  weight: number;
-  crush_weight: number;
-  host: string;
+export interface OsdTree {
+  id: number;
   device_class: string;
-  state: string[];
-  stats: OsdStats;
-  store_stats?: OsdStoreStats;
+  type: string;
+  type_id: number;
+  crush_weight: number;
+  depth: number;
+  pool_weights?: Record<string, number>;
+  exists?: number;
+  status?: string;
+  reweight?: number;
+  primary_affinity?: number;
+  name: string;
+}
+
+export interface OsdHost {
+  id: number;
+  name: string;
+  type: string;
+  type_id: number;
+  pool_weights?: Record<string, number>;
+  children: number[];
 }
 
 export interface OsdStats {
-  fs_avail: number;
-  fs_capacity: number;
-  fs_used: number;
-  kb: number;
-  kb_avail: number;
-  kb_used: number;
-  kb_wr: number;
-  kb_rd: number;
-  op: number;
-  op_in_bytes: number;
-  op_out_bytes: number;
-  op_r: number;
   op_w: number;
-  op_rw: number;
-  num_snap_trims: number;
-  num_snap_trims_pending: number;
-  snap_trim_rate: number;
-  snap_trim_latency: number;
-  latency: number;
-  commit_latency_ms: number;
-  apply_latency_ms: number;
+  op_in_bytes: number;
+  op_r: number;
+  op_out_bytes: number;
+  numpg: number;
+  stat_bytes: number;
+  stat_bytes_used: number;
 }
 
-export interface OsdStoreStats {
-  bytes: number;
-  kb: number;
-  kb_used: number;
-  kb_avail: number;
-  type: string;
+export interface Osd {
+  osd: number;
+  id: number;
+  uuid: string;
+  up: number;
+  in: number;
+  weight: number;
+  primary_affinity: number;
+  state: string[];
+  public_addr?: string;
+  cluster_addr?: string;
+  tree?: OsdTree;
+  host?: OsdHost;
+  osd_stats?: Record<string, unknown>;
+  stats?: OsdStats;
+  stats_history?: Record<string, number[][]>;
+  operational_status?: 'working' | 'deleting' | 'unmanaged';
 }
 
 export interface OsdSettings {

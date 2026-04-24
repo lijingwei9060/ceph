@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Server, Trash2, MoreHorizontal } from 'lucide-react';
-import { useIscsiOverview, useIscsiTargets, useDeleteIscsiTarget } from '../api/use-iscsi';
+import { Server, Trash2, MoreHorizontal, AlertCircle, RefreshCw } from 'lucide-react';
+import { useIscsiStatus, useIscsiOverview, useIscsiTargets, useDeleteIscsiTarget } from '../api/use-iscsi';
 import { DataTable } from '@/components/ui/data-table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,10 +20,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 export function IscsiOverviewPage() {
+  const { t } = useTranslation();
+  const { data: status } = useIscsiStatus();
   const { data: overview } = useIscsiOverview();
-  const { data: targets = [], isLoading: targetsLoading } = useIscsiTargets();
+  const { data: targets = [], isLoading: targetsLoading, refetch } = useIscsiTargets();
   const deleteTarget = useDeleteIscsiTarget();
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
@@ -47,16 +50,13 @@ export function IscsiOverviewPage() {
       ),
     },
     {
-      accessorKey: 'status',
-      header: 'Status',
-      cell: ({ row }) => {
-        const ok = row.original.status === 'up';
-        return (
-          <Badge variant={ok ? 'default' : 'secondary'}>
-            {row.original.status}
-          </Badge>
-        );
-      },
+      accessorKey: 'acl_enabled',
+      header: 'ACL',
+      cell: ({ row }) => (
+        <Badge variant={row.original.acl_enabled ? 'default' : 'outline'}>
+          {row.original.acl_enabled ? 'Enabled' : 'Disabled'}
+        </Badge>
+      ),
     },
     {
       accessorKey: 'portals',
@@ -66,12 +66,12 @@ export function IscsiOverviewPage() {
     {
       accessorKey: 'disks',
       header: 'Disks',
-      cell: ({ row }) => row.original.disks ?? 0,
+      cell: ({ row }) => row.original.disks?.length ?? 0,
     },
     {
       accessorKey: 'clients',
       header: 'Clients',
-      cell: ({ row }) => row.original.clients ?? 0,
+      cell: ({ row }) => row.original.clients?.length ?? 0,
     },
     {
       id: 'actions',
@@ -97,44 +97,68 @@ export function IscsiOverviewPage() {
     },
   ];
 
+  if (status && !status.available) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Server className="h-5 w-5 text-muted-foreground" />
+          <h1 className="text-2xl font-semibold">iSCSI Gateways</h1>
+        </div>
+        <Card>
+          <CardContent className="flex items-center gap-3 py-8">
+            <AlertCircle className="h-5 w-5 text-muted-foreground" />
+            <div>
+              <p className="font-medium">iSCSI is not available</p>
+              {status.message && (
+                <p className="text-sm text-muted-foreground">{status.message}</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Server className="h-5 w-5 text-muted-foreground" />
-        <h1 className="text-2xl font-semibold">iSCSI Gateways</h1>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Server className="h-5 w-5 text-muted-foreground" />
+          <h1 className="text-2xl font-semibold">iSCSI Gateways</h1>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => refetch()}>
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Refresh
+        </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Targets</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{overview?.targets ?? '-'}</div>
+            <div className="text-2xl font-bold">{targets.length}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Portals</CardTitle>
+            <CardTitle className="text-sm">Total Disks</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{overview?.portals ?? '-'}</div>
+            <div className="text-2xl font-bold">
+              {targets.reduce((sum, t) => sum + (t.disks?.length ?? 0), 0)}
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Disks</CardTitle>
+            <CardTitle className="text-sm">Total Clients</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{overview?.disks ?? '-'}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Clients</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{overview?.clients ?? '-'}</div>
+            <div className="text-2xl font-bold">
+              {targets.reduce((sum, t) => sum + (t.clients?.length ?? 0), 0)}
+            </div>
           </CardContent>
         </Card>
       </div>

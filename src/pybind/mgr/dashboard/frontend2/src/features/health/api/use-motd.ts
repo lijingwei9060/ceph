@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
+import { uiApiClient } from '@/lib/api-client';
 
 export interface Motd {
   message: string;
@@ -13,7 +13,7 @@ export function useMotd() {
     queryKey: ['motd'],
     queryFn: async () => {
       try {
-        return await apiClient.get('ui-api/motd').json<Motd>();
+        return await uiApiClient.get('motd').json<Motd>();
       } catch {
         return null;
       }

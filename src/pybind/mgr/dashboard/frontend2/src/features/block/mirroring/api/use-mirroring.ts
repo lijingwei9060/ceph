@@ -1,61 +1,120 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 
-export interface MirroringStats {
-  daemons: number;
-  pools: number;
-  images: number;
-  provisioned_images: number;
-  active_images: number;
+export interface MirroringSummary {
+  site_name: string;
+  status: number;
+  content_data: {
+    pools: Array<{
+      pool_name: string;
+      mirror_mode: string;
+      peer_uuids: string[];
+      image_error: string[];
+      image_syncing: string[];
+      image_ready: string[];
+    }>;
+    image_error: string[];
+    image_syncing: string[];
+    image_ready: string[];
+  };
 }
 
-export interface MirroringPool {
-  name: string;
-  mode: string;
-  peers: number;
-  images: number;
+export interface MirroringPoolMode {
+  mirror_mode: string;
 }
 
 export interface MirroringPeer {
   uuid: string;
-  names: string[];
-  sites: Array<{ name: string; site_name: string }>;
+  client_id: string;
+  direction: string;
+  cluster_name: string;
+  mon_host: string;
+  key: string;
 }
 
-export function useMirroringStats() {
-  return useQuery<MirroringStats>({
-    queryKey: ['mirroring', 'stats'],
-    queryFn: async () => apiClient.get('block/rbd/mirroring/stats').json<MirroringStats>(),
+export function useMirroringSummary() {
+  return useQuery<MirroringSummary>({
+    queryKey: ['mirroring', 'summary'],
+    queryFn: async () => apiClient.get('block/mirroring/summary').json<MirroringSummary>(),
   });
 }
 
-export function useMirroringPools() {
-  return useQuery<MirroringPool[]>({
-    queryKey: ['mirroring', 'pools'],
-    queryFn: async () => apiClient.get('block/rbd/mirroring/pools').json<MirroringPool[]>(),
+export function useMirroringSiteName() {
+  return useQuery<{ site_name: string }>({
+    queryKey: ['mirroring', 'site-name'],
+    queryFn: async () => apiClient.get('block/mirroring/site_name').json<{ site_name: string }>(),
   });
 }
 
-export function useMirroringPeers(poolName: string) {
-  return useQuery<MirroringPeer[]>({
-    queryKey: ['mirroring', 'peers', poolName],
-    queryFn: async () =>
-      apiClient.get(`block/rbd/mirroring/peers?pool_name=${poolName}`).json<MirroringPeer[]>(),
+export function useSetMirroringSiteName() {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, string>({
+    mutationFn: async (siteName) => {
+      await apiClient.put('block/mirroring/site_name', { json: { site_name: siteName } });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mirroring'] });
+    },
+  });
+}
+
+export function useMirroringPoolMode(poolName: string) {
+  return useQuery<MirroringPoolMode>({
+    queryKey: ['mirroring', 'pool', poolName],
+    queryFn: async () => apiClient.get(`block/mirroring/pool/${poolName}`).json<MirroringPoolMode>(),
     enabled: !!poolName,
   });
 }
 
-export function useAddMirroringPeer() {
+export function useSetMirroringPoolMode() {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, { poolName: string; mirrorMode: string }>({
+    mutationFn: async ({ poolName, mirrorMode }) => {
+      await apiClient.put(`block/mirroring/pool/${poolName}`, {
+        json: { mirror_mode: mirrorMode },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mirroring'] });
+    },
+  });
+}
+
+export function useMirroringPeers(poolName: string) {
+  return useQuery<string[]>({
+    queryKey: ['mirroring', 'peers', poolName],
+    queryFn: async () =>
+      apiClient.get(`block/mirroring/pool/${poolName}/peer`).json<string[]>(),
+    enabled: !!poolName,
+  });
+}
+
+export function useMirroringPeerDetail(poolName: string, peerUuid: string) {
+  return useQuery<MirroringPeer>({
+    queryKey: ['mirroring', 'peers', poolName, peerUuid],
+    queryFn: async () =>
+      apiClient.get(`block/mirroring/pool/${poolName}/peer/${peerUuid}`).json<MirroringPeer>(),
+    enabled: !!poolName && !!peerUuid,
+  });
+}
+
+export function useCreateMirroringPeer() {
   const queryClient = useQueryClient();
   return useMutation<void, Error, {
     poolName: string;
-    uuid: string;
-    name: string;
-    siteName?: string;
+    clusterName: string;
+    clientId: string;
+    monHost?: string;
+    key?: string;
   }>({
-    mutationFn: async ({ poolName, uuid, name, siteName }) => {
-      await apiClient.post(`block/rbd/mirroring/peers/${uuid}`, {
-        json: { pool_name: poolName, name, site_name: siteName },
+    mutationFn: async ({ poolName, clusterName, clientId, monHost, key }) => {
+      await apiClient.post(`block/mirroring/pool/${poolName}/peer`, {
+        json: {
+          cluster_name: clusterName,
+          client_id: clientId,
+          mon_host: monHost,
+          key,
+        },
       });
     },
     onSuccess: () => {
@@ -68,7 +127,7 @@ export function useDeleteMirroringPeer() {
   const queryClient = useQueryClient();
   return useMutation<void, Error, { poolName: string; peerUuid: string }>({
     mutationFn: async ({ poolName, peerUuid }) => {
-      await apiClient.delete(`block/rbd/mirroring/peers/${peerUuid}?pool_name=${poolName}`);
+      await apiClient.delete(`block/mirroring/pool/${poolName}/peer/${peerUuid}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mirroring'] });
@@ -76,12 +135,22 @@ export function useDeleteMirroringPeer() {
   });
 }
 
-export function useUpdateMirroringPoolMode() {
+export function useBootstrapToken(poolName: string) {
+  return useMutation<{ token: string }, Error, void>({
+    mutationFn: async () => {
+      return apiClient.post(`block/mirroring/pool/${poolName}/bootstrap/token`, {
+        json: {},
+      }).json<{ token: string }>();
+    },
+  });
+}
+
+export function useImportBootstrapToken(poolName: string) {
   const queryClient = useQueryClient();
-  return useMutation<void, Error, { poolName: string; mode: string }>({
-    mutationFn: async ({ poolName, mode }) => {
-      await apiClient.put(`block/rbd/mirroring/pool/${poolName}`, {
-        json: { mode },
+  return useMutation<void, Error, { direction: string; token: string }>({
+    mutationFn: async ({ direction, token }) => {
+      await apiClient.post(`block/mirroring/pool/${poolName}/bootstrap/peer`, {
+        json: { direction, token },
       });
     },
     onSuccess: () => {

@@ -26,6 +26,18 @@ const configEditSchema = z.object({
 
 type ConfigEditForm = z.infer<typeof configEditSchema>;
 
+function getConfigDisplayValue(opt: ConfigOption): string {
+  if (!opt.value || opt.value.length === 0) return '-';
+  if (opt.value.length === 1) return opt.value[0].value;
+  return opt.value.map((v) => `${v.section}: ${v.value}`).join(', ');
+}
+
+function getConfigEditValue(opt: ConfigOption): string {
+  if (!opt.value || opt.value.length === 0) return opt.default ?? '';
+  if (opt.value.length === 1) return opt.value[0].value;
+  return opt.value[0].value;
+}
+
 export function ConfigListPage() {
   const { t } = useTranslation();
   const { data: configs = [], isLoading } = useClusterConfig();
@@ -76,19 +88,19 @@ export function ConfigListPage() {
       ),
     },
     {
-      accessorKey: 'default_value',
+      id: 'default',
       header: 'Default',
       cell: ({ row }) => (
         <span className="font-mono text-xs text-muted-foreground">
-          {row.original.default_value ?? '-'}
+          {row.original.default ?? '-'}
         </span>
       ),
     },
     {
-      accessorKey: 'value',
+      id: 'value',
       header: 'Current Value',
       cell: ({ row }) => (
-        <span className="font-mono text-sm">{row.original.value ?? '-'}</span>
+        <span className="font-mono text-sm">{getConfigDisplayValue(row.original)}</span>
       ),
     },
     {
@@ -131,7 +143,7 @@ export function ConfigListPage() {
             <DialogTitle className="font-mono">{editConfig?.name}</DialogTitle>
           </DialogHeader>
           {editConfig && (
-            <ConfigEditForm
+            <ConfigEditFormInner
               config={editConfig}
               onSuccess={() => setEditConfig(null)}
             />
@@ -142,7 +154,7 @@ export function ConfigListPage() {
   );
 }
 
-function ConfigEditForm({
+function ConfigEditFormInner({
   config,
   onSuccess,
 }: {
@@ -152,7 +164,7 @@ function ConfigEditForm({
   const setConfig = useSetConfig();
   const form = useForm<ConfigEditForm>({
     resolver: zodResolver(configEditSchema),
-    defaultValues: { value: config.value ?? config.default_value ?? '' },
+    defaultValues: { value: getConfigEditValue(config) },
   });
 
   const onSubmit = async (data: ConfigEditForm) => {
@@ -181,7 +193,7 @@ function ConfigEditForm({
           )}
         />
         <div className="text-xs text-muted-foreground">
-          <p>Default: {config.default_value ?? 'none'}</p>
+          <p>Default: {config.default ?? 'none'}</p>
           <p>Type: {config.type}</p>
           {config.can_update_at_runtime && (
             <p className="text-green-600">Can update at runtime</p>

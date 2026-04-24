@@ -40,12 +40,10 @@ export function HostListPage() {
       ),
     },
     {
-      accessorKey: 'addresses',
-      header: 'Addresses',
+      accessorKey: 'addr',
+      header: 'Address',
       cell: ({ row }) => (
-        <span className="text-muted-foreground">
-          {row.original.addresses?.join(', ') || '-'}
-        </span>
+        <span className="text-muted-foreground">{row.original.addr || '-'}</span>
       ),
     },
     {
@@ -63,7 +61,7 @@ export function HostListPage() {
                 : 'default'
             }
           >
-            {status}
+            {status || 'online'}
           </Badge>
         );
       },
@@ -82,23 +80,30 @@ export function HostListPage() {
       ),
     },
     {
-      accessorKey: 'cpu',
-      header: 'CPU',
-      cell: ({ row }) => row.original.cpu || '-',
-    },
-    {
-      accessorKey: 'mem',
-      header: 'Memory',
+      accessorKey: 'services',
+      header: 'Services',
       cell: ({ row }) => {
-        const mem = row.original.mem;
-        if (!mem) return '-';
-        return `${(mem / 1024 / 1024 / 1024).toFixed(1)} GB`;
+        const instances = row.original.service_instances;
+        if (!instances?.length) return '-';
+        return (
+          <div className="flex flex-wrap gap-1">
+            {instances.map((s) => (
+              <Badge key={s.type} variant="secondary" className="text-xs">
+                {s.type}({s.count})
+              </Badge>
+            ))}
+          </div>
+        );
       },
     },
     {
-      id: 'osds',
-      header: 'OSDs',
-      cell: ({ row }) => row.original.osds ?? '-',
+      accessorKey: 'ceph_version',
+      header: 'Version',
+      cell: ({ row }) => (
+        <span className="text-xs text-muted-foreground">
+          {row.original.ceph_version || '-'}
+        </span>
+      ),
     },
     {
       id: 'actions',

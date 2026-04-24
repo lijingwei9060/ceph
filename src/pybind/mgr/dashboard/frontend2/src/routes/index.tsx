@@ -7,17 +7,22 @@ import { PlaceholderPage } from './placeholder-page';
 import { AuthGuard, ChangePasswordGuard } from './auth-guard';
 import { DashboardOverview } from '@/features/dashboard/pages/overview';
 import { HostListPage } from '@/features/cluster/hosts/pages/host-list';
-import { OsdListPage } from '@/features/cluster/osd/pages/osd-list';
+import { InventoryListPage } from '@/features/cluster/inventory/pages/inventory-list';
 import { MonitorListPage } from '@/features/cluster/monitor/pages/monitor-list';
+import { ServiceListPage } from '@/features/cluster/services/pages/service-list';
+import { OsdListPage } from '@/features/cluster/osd/pages/osd-list';
 import { ConfigListPage } from '@/features/cluster/config/pages/config-list';
 import { CrushMapPage } from '@/features/cluster/crush/pages/crush-map';
-import { ServiceListPage } from '@/features/cluster/services/pages/service-list';
 import { ModuleListPage } from '@/features/cluster/mgr-modules/pages/module-list';
 import { LogsPage } from '@/features/cluster/log-viewer/pages/logs';
+import { PoolListPage } from '@/features/cluster/pools/pages/pool-list';
 import { RbdListPage } from '@/features/block/rbd/pages/rbd-list';
 import { RbdTrashPage } from '@/features/block/rbd/pages/rbd-trash';
 import { MirroringOverviewPage } from '@/features/block/mirroring/pages/mirroring-overview';
 import { IscsiOverviewPage } from '@/features/block/iscsi/pages/iscsi-overview';
+import { RgwDaemonListPage } from '@/features/rgw/daemon/pages/daemon-list';
+import { RgwUserListPage } from '@/features/rgw/user/pages/user-list';
+import { RgwBucketListPage } from '@/features/rgw/bucket/pages/bucket-list';
 
 export const router = createHashRouter([
   {
@@ -49,7 +54,7 @@ export const router = createHashRouter([
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: 'dashboard', element: <DashboardOverview /> },
       { path: 'hosts', element: <HostListPage /> },
-      { path: 'inventory', element: <PageWrapper title="Physical Disks" /> },
+      { path: 'inventory', element: <InventoryListPage /> },
       { path: 'monitors', element: <MonitorListPage /> },
       { path: 'services', element: <ServiceListPage /> },
       { path: 'osd', element: <OsdListPage /> },
@@ -58,18 +63,18 @@ export const router = createHashRouter([
       { path: 'mgr-modules', element: <ModuleListPage /> },
       { path: 'logs', element: <LogsPage /> },
       { path: 'monitoring', element: <PageWrapper title="Monitoring" /> },
-      { path: 'pools', element: <PageWrapper title="Pools" /> },
-      { path: 'block', element: <PageWrapper title="Block" /> },
+      { path: 'pools', element: <PoolListPage /> },
+      { path: 'block', element: <Navigate to="/block/rbd" replace /> },
       { path: 'block/rbd', element: <RbdListPage /> },
       { path: 'block/rbd/trash', element: <RbdTrashPage /> },
       { path: 'block/mirroring', element: <MirroringOverviewPage /> },
       { path: 'block/iscsi', element: <IscsiOverviewPage /> },
       { path: 'nfs', element: <PageWrapper title="NFS" /> },
       { path: 'cephfs', element: <PageWrapper title="CephFS" /> },
-      { path: 'rgw', element: <PageWrapper title="Object Gateway" /> },
-      { path: 'rgw/daemon', element: <PageWrapper title="RGW Daemons" /> },
-      { path: 'rgw/user', element: <PageWrapper title="RGW Users" /> },
-      { path: 'rgw/bucket', element: <PageWrapper title="RGW Buckets" /> },
+      { path: 'rgw', element: <Navigate to="/rgw/daemon" replace /> },
+      { path: 'rgw/daemon', element: <RgwDaemonListPage /> },
+      { path: 'rgw/user', element: <RgwUserListPage /> },
+      { path: 'rgw/bucket', element: <RgwBucketListPage /> },
       { path: 'settings', element: <PageWrapper title="Settings" /> },
     ],
   },

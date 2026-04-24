@@ -87,9 +87,10 @@ export function RbdTrashPage() {
   const handleRestore = async () => {
     if (!restoreConfirm) return;
     try {
+      const imageIdSpec = `${restoreConfirm.pool_name}/${restoreConfirm.name}`;
       await restoreRbd.mutateAsync({
-        poolName: restoreConfirm.pool_name,
-        imageName: restoreConfirm.name,
+        imageIdSpec,
+        newImageName: restoreConfirm.original_name || restoreConfirm.name,
       });
       toast.success(`RBD ${restoreConfirm.original_name || restoreConfirm.name} restored`);
       setRestoreConfirm(null);
@@ -101,7 +102,8 @@ export function RbdTrashPage() {
   const handlePurge = async () => {
     if (!purgeConfirm) return;
     try {
-      await purgeRbd.mutateAsync({ poolName: purgeConfirm.pool_name, imageName: purgeConfirm.name });
+      const imageIdSpec = `${purgeConfirm.pool_name}/${purgeConfirm.name}`;
+      await purgeRbd.mutateAsync({ imageIdSpec });
       toast.success(`RBD ${purgeConfirm.original_name || purgeConfirm.name} permanently deleted`);
       setPurgeConfirm(null);
     } catch {

@@ -14,44 +14,61 @@ import {
 } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 
 interface LogEntry {
-  timestamp: string;
+  stamp: string;
   priority: string;
   channel: string;
   message: string;
+  name?: string;
+  rank?: string;
+  seq?: number;
 }
 
 interface LogsResponse {
-  entries: LogEntry[];
-  next_page?: string;
+  clog: LogEntry[];
+  audit_log: LogEntry[];
 }
+
+type LogTab = 'cluster' | 'audit';
 
 export function LogsPage() {
   const { t } = useTranslation();
   const [filter, setFilter] = useState('');
   const [priority, setPriority] = useState<string>('all');
   const [autoRefresh, setAutoRefresh] = useState(false);
+  const [tab, setTab] = useState<LogTab>('cluster');
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading, refetch, dataUpdatedAt } = useQuery<LogsResponse>({
     queryKey: ['logs'],
     queryFn: async () => {
-      const data = await apiClient.get('logs').json<LogsResponse>();
-      return data;
+      // Ceph API: endpoint is /api/logs/all, returns {clog: [...], audit_log: [...]}
+      return apiClient.get('logs/all').json<LogsResponse>();
     },
     refetchInterval: autoRefresh ? 5000 : false,
   });
 
-  const entries = data?.entries ?? [];
+  const entries = tab === 'cluster' ? (data?.clog ?? []) : (data?.audit_log ?? []);
   const filtered = entries.filter((entry) => {
     const matchesFilter = filter
-      ? entry.message.toLowerCase().includes(filter.toLowerCase())
+      ? entry.message?.toLowerCase().includes(filter.toLowerCase())
       : true;
     const matchesPriority =
       priority === 'all' || entry.priority === priority;
     return matchesFilter && matchesPriority;
   });
+
+  const priorityBadge = (p: string) => {
+    const map: Record<string, 'destructive' | 'secondary' | 'outline'> = {
+      error: 'destructive',
+      warning: 'secondary',
+      info: 'outline',
+      debug: 'outline',
+    };
+    return map[p] ?? 'outline';
+  };
 
   return (
     <div className="flex h-full flex-col space-y-4">
@@ -81,6 +98,15 @@ export function LogsPage() {
       </div>
 
       <div className="flex gap-2">
+        <Select value={tab} onValueChange={(v) => setTab(v as LogTab)}>
+          <SelectTrigger className="w-36">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="cluster">Cluster Log</SelectItem>
+            <SelectItem value="audit">Audit Log</SelectItem>
+          </SelectContent>
+        </Select>
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -119,20 +145,17 @@ export function LogsPage() {
               filtered.map((entry, i) => (
                 <div key={i} className="flex gap-3 hover:bg-muted/50 py-1">
                   <span className="text-muted-foreground shrink-0">
-                    {entry.timestamp}
+                    {entry.stamp}
                   </span>
                   <Badge
-                    variant={
-                      entry.priority === 'error'
-                        ? 'destructive'
-                        : entry.priority === 'warning'
-                        ? 'secondary'
-                        : 'outline'
-                    }
+                    variant={priorityBadge(entry.priority)}
                     className="shrink-0 text-xs"
                   >
                     {entry.priority}
                   </Badge>
+                  {tab === 'audit' && entry.name && (
+                    <span className="text-muted-foreground shrink-0">[{entry.name}]</span>
+                  )}
                   <span className="text-foreground break-all">{entry.message}</span>
                 </div>
               ))
@@ -143,5 +166,3 @@ export function LogsPage() {
     </div>
   );
 }
-
-import { Card } from '@/components/ui/card';

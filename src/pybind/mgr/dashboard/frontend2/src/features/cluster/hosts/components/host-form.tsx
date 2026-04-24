@@ -5,7 +5,7 @@ import { z } from 'zod/v4';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useCreateHost } from '@/features/host/api/use-hosts';
+import { useCreateHost, useUpdateHost } from '@/features/host/api/use-hosts';
 import type { Host } from '@/types';
 import { toast } from 'sonner';
 
@@ -25,7 +25,9 @@ interface HostFormProps {
 
 export function HostForm({ initialData, onSuccess, onCancel }: HostFormProps) {
   const createHost = useCreateHost();
+  const updateHost = useUpdateHost();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isEditing = !!initialData;
 
   const {
     register,
@@ -35,7 +37,7 @@ export function HostForm({ initialData, onSuccess, onCancel }: HostFormProps) {
     resolver: zodResolver(hostFormSchema),
     defaultValues: {
       hostname: initialData?.hostname ?? '',
-      addr: initialData?.addresses?.[0] ?? '',
+      addr: initialData?.addr ?? '',
       labels: initialData?.labels?.join(', ') ?? '',
     },
   });
@@ -46,15 +48,24 @@ export function HostForm({ initialData, onSuccess, onCancel }: HostFormProps) {
       const labels = data.labels
         ? data.labels.split(',').map((l) => l.trim()).filter(Boolean)
         : [];
-      await createHost.mutateAsync({
-        hostname: data.hostname,
-        addr: data.addr,
-        labels,
-      });
-      toast.success('Host added successfully');
+
+      if (isEditing) {
+        await updateHost.mutateAsync({
+          hostname: initialData!.hostname,
+          labels,
+        });
+        toast.success('Host updated successfully');
+      } else {
+        await createHost.mutateAsync({
+          hostname: data.hostname,
+          addr: data.addr,
+          labels,
+        });
+        toast.success('Host added successfully');
+      }
       onSuccess();
     } catch {
-      toast.error('Failed to add host');
+      toast.error(isEditing ? 'Failed to update host' : 'Failed to add host');
     } finally {
       setIsSubmitting(false);
     }
@@ -64,14 +75,14 @@ export function HostForm({ initialData, onSuccess, onCancel }: HostFormProps) {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="hostname">Hostname</Label>
-        <Input id="hostname" {...register('hostname')} />
+        <Input id="hostname" {...register('hostname')} disabled={isEditing} />
         {errors.hostname && (
           <p className="text-xs text-destructive">{errors.hostname.message}</p>
         )}
       </div>
       <div className="space-y-2">
         <Label htmlFor="addr">Address</Label>
-        <Input id="addr" {...register('addr')} />
+        <Input id="addr" {...register('addr')} disabled={isEditing} />
         {errors.addr && (
           <p className="text-xs text-destructive">{errors.addr.message}</p>
         )}
@@ -89,7 +100,9 @@ export function HostForm({ initialData, onSuccess, onCancel }: HostFormProps) {
           Cancel
         </Button>
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Adding...' : 'Add Host'}
+          {isSubmitting
+            ? (isEditing ? 'Saving...' : 'Adding...')
+            : (isEditing ? 'Save' : 'Add Host')}
         </Button>
       </div>
     </form>

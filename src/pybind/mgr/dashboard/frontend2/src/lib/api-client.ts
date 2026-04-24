@@ -1,7 +1,5 @@
 import ky, { type KyInstance } from 'ky';
 
-const CEPH_API_ACCEPT = 'application/vnd.ceph.api.v1.0+json';
-
 const STORAGE_KEY = 'dashboard_token';
 
 function getToken(): string | null {
@@ -15,30 +13,60 @@ function getToken(): string | null {
   }
 }
 
+function createAuthHook() {
+  return [
+    (request: Request) => {
+      const token = getToken();
+      if (token) {
+        request.headers.set('Authorization', `Bearer ${token}`);
+      }
+    },
+  ];
+}
+
+function createUnauthorizedHook() {
+  return [
+    (_request: Request, _options: RequestInit, response: Response) => {
+      if (response.status === 401) {
+        localStorage.removeItem(STORAGE_KEY);
+        window.location.hash = '#/login';
+        return new Response(null, { status: 401 });
+      }
+      return response;
+    },
+  ];
+}
+
+/** Build Ceph API versioned Accept header */
+export function cephAcceptHeader(major: number, minor: number): string {
+  return `application/vnd.ceph.api.v${major}.${minor}+json`;
+}
+
+// APIRouter endpoints: /api/...
+// Default Accept: application/json (no version constraint for unversioned endpoints)
 export const apiClient: KyInstance = ky.create({
   prefixUrl: '/api',
   headers: {
-    Accept: CEPH_API_ACCEPT,
+    Accept: 'application/json',
   },
   hooks: {
-    beforeRequest: [
-      (request) => {
-        const token = getToken();
-        if (token) {
-          request.headers.set('Authorization', `Bearer ${token}`);
-        }
-      },
-    ],
-    afterResponse: [
-      (_request, _options, response) => {
-        if (response.status === 401) {
-          localStorage.removeItem(STORAGE_KEY);
-          window.location.hash = '#/login';
-          return new Response(null, { status: 401 });
-        }
-        return response;
-      },
-    ],
+    beforeRequest: createAuthHook(),
+    afterResponse: createUnauthorizedHook(),
+  },
+});
+
+// Versioned API clients for endpoints that require specific API versions
+// These are used by passing { headers: { Accept: cephAcceptHeader(x, y) } } to individual calls
+
+// UIRouter endpoints: /ui-api/...
+export const uiApiClient: KyInstance = ky.create({
+  prefixUrl: '/ui-api',
+  headers: {
+    Accept: 'application/json',
+  },
+  hooks: {
+    beforeRequest: createAuthHook(),
+    afterResponse: createUnauthorizedHook(),
   },
 });
 
@@ -46,7 +74,7 @@ export function createClusterClient(baseUrl: string, token: string): KyInstance 
   return ky.create({
     prefixUrl: baseUrl,
     headers: {
-      Accept: CEPH_API_ACCEPT,
+      Accept: 'application/json',
       Authorization: `Bearer ${token}`,
     },
   });

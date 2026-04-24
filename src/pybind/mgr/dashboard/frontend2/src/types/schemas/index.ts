@@ -48,16 +48,23 @@ export const featureTogglesSchema = z.object({
 
 export const hostSchema = z.object({
   hostname: z.string(),
-  addresses: z.array(z.string()),
+  addr: z.string(),
   labels: z.array(z.string()),
   status: z.string(),
-  source: z.number(),
-  seq_run: z.number(),
-  cpu: z.string().optional(),
-  kernel: z.string().optional(),
-  mem: z.number().optional(),
-  mem_avail: z.number().optional(),
-  osds: z.number().optional(),
+  sources: z.object({
+    ceph: z.boolean(),
+    orchestrator: z.boolean(),
+  }),
+  services: z.array(z.object({
+    type: z.string(),
+    id: z.string(),
+  })).optional(),
+  service_instances: z.array(z.object({
+    type: z.string(),
+    count: z.number(),
+  })).optional(),
+  ceph_version: z.string().optional(),
+  service_type: z.string().optional(),
 });
 
 export const osdSchema = z.object({

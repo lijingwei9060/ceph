@@ -1,14 +1,22 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, cephAcceptHeader } from '@/lib/api-client';
 
 export interface Service {
-  hostname: string;
-  service_name: string;
-  service_id?: string;
   service_type: string;
-  status: string;
-  status_desc: string;
-  version?: string;
+  service_id: string;
+  service_name: string;
+  placement?: {
+    label?: string;
+    hosts?: string[];
+    count?: number;
+  };
+  spec?: Record<string, unknown>;
+  status?: {
+    container_image_id?: string;
+    container_image_name?: string;
+    running?: number;
+    size?: number;
+  };
 }
 
 export function useServices(serviceName?: string) {
@@ -16,7 +24,9 @@ export function useServices(serviceName?: string) {
     queryKey: ['services', serviceName],
     queryFn: async () => {
       const url = serviceName ? `service?service_name=${serviceName}` : 'service';
-      return apiClient.get(url).json<Service[]>();
+      return apiClient.get(url, {
+        headers: { Accept: cephAcceptHeader(2, 0) },
+      }).json<Service[]>();
     },
   });
 }

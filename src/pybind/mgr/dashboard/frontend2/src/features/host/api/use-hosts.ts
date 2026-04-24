@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, cephAcceptHeader } from '@/lib/api-client';
 import { hostSchema } from '@/types/schemas';
 import type { Host, HostDevice, HostDaemon } from '@/types';
 
@@ -7,7 +7,9 @@ export function useHosts() {
   return useQuery<Host[]>({
     queryKey: ['hosts'],
     queryFn: async () => {
-      const data = await apiClient.get('host').json<unknown[]>();
+      const data = await apiClient.get('host', {
+        headers: { Accept: cephAcceptHeader(1, 2) },
+      }).json<unknown[]>();
       return data.map((item) => hostSchema.parse(item) as Host);
     },
   });
@@ -26,6 +28,26 @@ export function useCreateHost() {
   return useMutation<void, Error, { hostname: string; addr: string; labels?: string[] }>({
     mutationFn: async ({ hostname, addr, labels }) => {
       await apiClient.post('host', { json: { hostname, addr, labels } });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hosts'] });
+    },
+  });
+}
+
+export function useUpdateHost() {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, { hostname: string; labels?: string[]; maintenance?: boolean; force?: boolean; drain?: boolean }>({
+    mutationFn: async ({ hostname, labels, maintenance, force, drain }) => {
+      await apiClient.put(`host/${hostname}`, {
+        json: {
+          update_labels: labels !== undefined,
+          labels,
+          maintenance,
+          force,
+          drain,
+        },
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hosts'] });

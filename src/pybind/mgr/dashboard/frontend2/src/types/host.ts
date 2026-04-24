@@ -1,15 +1,22 @@
 export interface Host {
   hostname: string;
-  addresses: string[];
+  addr: string;
   labels: string[];
   status: string;
-  source: number;
-  seq_run: number;
-  cpu: string;
-  kernel: string;
-  mem: number;
-  mem_avail: number;
-  osds?: number;
+  sources: {
+    ceph: boolean;
+    orchestrator: boolean;
+  };
+  services: Array<{
+    type: string;
+    id: string;
+  }>;
+  service_instances: Array<{
+    type: string;
+    count: number;
+  }>;
+  ceph_version: string;
+  service_type?: string;
 }
 
 export interface HostDevice {

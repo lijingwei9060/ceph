@@ -1,15 +1,74 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Network, ChevronRight, ChevronDown } from 'lucide-react';
-import { useState } from 'react';
-import { useHealthFull } from '@/features/health/api/use-health';
+import { useCrushInfo } from '../api/use-crush-rule';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import type { CrushNode } from '@/types/health';
 
-function CrushTreeNode({ node, depth = 0 }: { node: CrushNode; depth?: number }) {
+interface CrushNodeRaw {
+  id: number;
+  name: string;
+  type: string;
+  type_id: number;
+  children?: number[];
+  device_class?: string;
+  crush_weight?: number;
+  exists?: number;
+  primary_affinity?: number;
+  reweight?: number;
+  status?: string;
+  pool_weights?: Record<string, number>;
+}
+
+interface TreeNode {
+  id: number;
+  name: string;
+  type: string;
+  status?: string;
+  crushWeight?: number;
+  deviceClass?: string;
+  children: TreeNode[];
+  raw: CrushNodeRaw;
+}
+
+function buildTree(data: { nodes: CrushNodeRaw[]; roots: number[] }): TreeNode[] {
+  const { nodes, roots } = data;
+  if (!nodes || nodes.length === 0) return [];
+
+  const nodeMap = new Map<number, TreeNode>();
+
+  // Process in reverse so children are resolved before parents
+  for (let i = nodes.length - 1; i >= 0; i--) {
+    const node = nodes[i];
+    const childNodes: TreeNode[] = [];
+    if (node.children) {
+      for (const childId of [...node.children].sort((a, b) => a - b)) {
+        const child = nodeMap.get(childId);
+        if (child) childNodes.push(child);
+      }
+    }
+
+    nodeMap.set(node.id, {
+      id: node.id,
+      name: node.name,
+      type: node.type,
+      status: node.status,
+      crushWeight: node.crush_weight,
+      deviceClass: node.device_class,
+      children: childNodes,
+      raw: node,
+    });
+  }
+
+  return roots
+    .map((id) => nodeMap.get(id))
+    .filter((n): n is TreeNode => n !== undefined);
+}
+
+function CrushTreeNode({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
   const [expanded, setExpanded] = useState(depth < 2);
-  const hasChildren = node.children && node.children.length > 0;
+  const hasChildren = node.children.length > 0;
 
   return (
     <div>
@@ -34,12 +93,22 @@ function CrushTreeNode({ node, depth = 0 }: { node: CrushNode; depth?: number })
           {node.type}
         </Badge>
         <span className="text-sm">{node.name}</span>
-        <span className="text-xs text-muted-foreground">
-          (weight: {node.weight.toFixed(3)})
-        </span>
+        {node.crushWeight !== undefined && node.crushWeight > 0 && (
+          <span className="text-xs text-muted-foreground">
+            (weight: {node.crushWeight.toFixed(3)})
+          </span>
+        )}
+        {node.deviceClass && (
+          <Badge variant="secondary" className="text-xs">{node.deviceClass}</Badge>
+        )}
+        {node.status && (
+          <Badge variant={node.status === 'up' ? 'default' : 'secondary'} className="text-xs">
+            {node.status}
+          </Badge>
+        )}
       </div>
       {expanded &&
-        node.children?.map((child) => (
+        node.children.map((child) => (
           <CrushTreeNode key={child.id} node={child} depth={depth + 1} />
         ))}
     </div>
@@ -48,7 +117,7 @@ function CrushTreeNode({ node, depth = 0 }: { node: CrushNode; depth?: number })
 
 export function CrushMapPage() {
   const { t } = useTranslation();
-  const { data: health, isLoading } = useHealthFull();
+  const { data: crushInfo, isLoading } = useCrushInfo();
 
   if (isLoading) {
     return (
@@ -58,8 +127,7 @@ export function CrushMapPage() {
     );
   }
 
-  const crushMap = health?.osd_map?.crush;
-  const trees: CrushNode[] = crushMap?.trees ?? [];
+  const treeNodes = crushInfo ? buildTree(crushInfo) : [];
 
   return (
     <div className="space-y-4">
@@ -73,12 +141,12 @@ export function CrushMapPage() {
           <CardTitle className="text-sm">CRUSH Hierarchy</CardTitle>
         </CardHeader>
         <CardContent>
-          {trees.length === 0 ? (
+          {treeNodes.length === 0 ? (
             <p className="text-muted-foreground text-sm">No CRUSH data available</p>
           ) : (
             <div className="space-y-1">
-              {trees.map((tree) => (
-                <CrushTreeNode key={tree.id} node={tree} />
+              {treeNodes.map((node) => (
+                <CrushTreeNode key={node.id} node={node} />
               ))}
             </div>
           )}

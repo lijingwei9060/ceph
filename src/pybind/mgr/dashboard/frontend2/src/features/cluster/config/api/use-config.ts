@@ -6,10 +6,19 @@ export interface ConfigOption {
   type: string;
   level: string;
   desc: string;
-  default_value?: string;
-  value?: string;
+  long_desc?: string;
+  default?: string;
+  daemon_default?: string;
+  tags?: string[];
+  services?: string[];
+  see_also?: string[];
+  enum_values?: string[];
+  min?: string;
+  max?: string;
   can_update_at_runtime: boolean;
   flags?: string[];
+  value?: Array<{ section: string; value: string }>;
+  source?: string;
 }
 
 export function useClusterConfig() {
