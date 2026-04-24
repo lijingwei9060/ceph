@@ -1,0 +1,45 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "confirm": "Confirm",
+    "close": "Close",
+    "search": "Search",
+    "noData": "No data available",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "cluster": "Cluster",
+    "hosts": "Hosts",
+    "monitors": "Monitors",
+    "services": "Services",
+    "osd": "OSD",
+    "pools": "Pools",
+    "block": "Block",
+    "rbd": "RBD Images",
+    "iscsi": "iSCSI",
+    "nfs": "NFS",
+    "object": "Object",
+    "rgw": "Object Gateway",
+    "filesystem": "Filesystem",
+    "cephfs": "CephFS",
+    "settings": "Settings",
+    "login": "Login"
+  },
+  "auth": {
+    "loginTitle": "Ceph Dashboard",
+    "username": "Username",
+    "password": "Password",
+    "loginButton": "Sign In",
+    "loginFailed": "Authentication failed"
+  }
+}

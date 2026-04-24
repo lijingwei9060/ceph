@@ -28,6 +28,7 @@ PASSWD=$(kubectl -n rook-ceph get secret rook-ceph-dashboard-password -o yaml | 
 echo "Admin password: $PASSWD"
 ```
 
+
 ### 验证后端可用
 
 > **重要**：所有 Dashboard API 请求必须携带 `Accept: application/vnd.ceph.api.v1.0+json` 头，否则返回 `415 Unsupported Media Type`。
