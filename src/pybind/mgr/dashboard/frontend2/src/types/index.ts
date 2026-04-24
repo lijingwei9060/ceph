@@ -19,6 +19,7 @@ export type {
   Summary,
   FeatureToggles,
   FeatureToggleKey,
+  CrushNode,
 } from './health';
 export type { Host, HostDevice, HostDaemon } from './host';
 export type { Osd, OsdStats, OsdStoreStats, OsdSettings } from './osd';

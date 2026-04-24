@@ -6,6 +6,14 @@ import { PageWrapper } from './page-wrapper';
 import { PlaceholderPage } from './placeholder-page';
 import { AuthGuard, ChangePasswordGuard } from './auth-guard';
 import { DashboardOverview } from '@/features/dashboard/pages/overview';
+import { HostListPage } from '@/features/cluster/hosts/pages/host-list';
+import { OsdListPage } from '@/features/cluster/osd/pages/osd-list';
+import { MonitorListPage } from '@/features/cluster/monitor/pages/monitor-list';
+import { ConfigListPage } from '@/features/cluster/config/pages/config-list';
+import { CrushMapPage } from '@/features/cluster/crush/pages/crush-map';
+import { ServiceListPage } from '@/features/cluster/services/pages/service-list';
+import { ModuleListPage } from '@/features/cluster/mgr-modules/pages/module-list';
+import { LogsPage } from '@/features/cluster/log-viewer/pages/logs';
 
 export const router = createHashRouter([
   {
@@ -36,16 +44,15 @@ export const router = createHashRouter([
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: 'dashboard', element: <DashboardOverview /> },
-      { path: 'cluster', element: <PageWrapper title="Cluster" /> },
-      { path: 'hosts', element: <PageWrapper title="Hosts" /> },
+      { path: 'hosts', element: <HostListPage /> },
       { path: 'inventory', element: <PageWrapper title="Physical Disks" /> },
-      { path: 'monitors', element: <PageWrapper title="Monitors" /> },
-      { path: 'services', element: <PageWrapper title="Services" /> },
-      { path: 'osd', element: <PageWrapper title="OSD" /> },
-      { path: 'configuration', element: <PageWrapper title="Configuration" /> },
-      { path: 'crush-map', element: <PageWrapper title="CRUSH Map" /> },
-      { path: 'mgr-modules', element: <PageWrapper title="Manager Modules" /> },
-      { path: 'logs', element: <PageWrapper title="Logs" /> },
+      { path: 'monitors', element: <MonitorListPage /> },
+      { path: 'services', element: <ServiceListPage /> },
+      { path: 'osd', element: <OsdListPage /> },
+      { path: 'configuration', element: <ConfigListPage /> },
+      { path: 'crush-map', element: <CrushMapPage /> },
+      { path: 'mgr-modules', element: <ModuleListPage /> },
+      { path: 'logs', element: <LogsPage /> },
       { path: 'monitoring', element: <PageWrapper title="Monitoring" /> },
       { path: 'pools', element: <PageWrapper title="Pools" /> },
       { path: 'block', element: <PageWrapper title="Block" /> },

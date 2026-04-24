@@ -8,6 +8,21 @@ export interface HealthCheck {
 export interface ClusterHealth {
   status: HealthStatus;
   checks: Record<string, HealthCheck>;
+  osd_map?: {
+    osds: unknown[];
+    crush: {
+      trees: CrushNode[];
+    };
+  };
+}
+
+export interface CrushNode {
+  id: number;
+  name: string;
+  type: string;
+  type_id: number;
+  weight: number;
+  children?: CrushNode[];
 }
 
 export interface ExecutingTask {
