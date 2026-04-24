@@ -203,17 +203,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: cd front2 && npm ci
-      - run: cd front2 && npm run lint
-      - run: cd front2 && npm run test:ci
-      - run: cd front2 && npm run build
+      - run: cd front2 && pnpm install --frozen-lockfile
+      - run: cd front2 && pnpm lint
+      - run: cd front2 && pnpm test:ci
+      - run: cd front2 && pnpm build
 
   e2e:
     runs-on: ubuntu-latest
     needs: test
     steps:
       - uses: actions/checkout@v4
-      - run: cd front2 && npm ci
-      - run: cd front2 && npx playwright install
-      - run: cd front2 && npm run e2e
+      - run: cd front2 && pnpm install --frozen-lockfile
+      - run: cd front2 && pnpm exec playwright install
+      - run: cd front2 && pnpm e2e
 ```

@@ -8,13 +8,13 @@
 ### 具体任务
 
 #### 0.1 初始化 Vite + React + TypeScript 项目
-- 使用 `npm create vite@latest front2 -- --template react-ts`
+- 使用 `pnpm create vite front2 --template react-ts`
 - 配置 `tsconfig.json` 严格模式
 - 配置路径别名 `@/` → `src/`
 
 #### 0.2 安装和配置 Tailwind CSS + shadcn/ui
 - 安装 Tailwind CSS 4.x 及其 Vite 插件
-- 初始化 shadcn/ui (`npx shadcn@latest init`)
+- 初始化 shadcn/ui (`pnpm dlx shadcn@latest init`)
 - 配置 shadcn 主题，参考现有 Carbon Design 色彩方案：
   - 主色: 蓝色系 (与 Carbon 的 blue-60 一致)
   - 警告色: 黄色系
@@ -66,13 +66,13 @@
 - 无 (纯前端基础设施)
 
 ### 测试方法
-- [ ] `npm run dev` 启动开发服务器，确认代理工作
+- [ ] `pnpm dev` 启动开发服务器，确认代理工作
 - [ ] 访问 `/api/health` 能返回后端数据
 - [ ] i18n 切换语言正常
 - [ ] 路由导航正常 (Hash 模式)
 - [ ] API 客户端版本头正确
 - [ ] 单元测试框架可运行
-- [ ] `npm run build` 构建成功
+- [ ] `pnpm build` 构建成功
 
 ### 目录结构
 ```
@@ -661,7 +661,7 @@ front2/
 #### 10.2 统一构建流程
 - 创建 `front2/CMakeLists.txt`:
   - Node.js 环境准备 (与现有类似)
-  - npm ci
+  - pnpm install --frozen-lockfile
   - Vite 构建
   - 安装到目标路径
 - 更新顶层 `CMakeLists.txt`:

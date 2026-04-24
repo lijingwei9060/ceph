@@ -21,7 +21,7 @@
   - 按数据变化频率设置 `staleTime`：健康数据 5s、静态配置 5min、用户列表 30s
   - 避免重复请求，使用 `placeholderData` 保持旧数据直到新数据到达
 - 首屏加载优化：
-  - 分析 `npm run build` 产物大小，确认无超过 200KB 的单 chunk（gzip 前）
+  - 分析 `pnpm build` 产物大小，确认无超过 200KB 的单 chunk（gzip 前）
   - 压缩图片资源
   - 确认 Vite 的 `build.rollupOptions.output.manualChunks` 合理分割
 
@@ -78,7 +78,7 @@
   - 存储池管理：创建、编辑
   - 用户管理：创建用户、分配角色
   - i18n：切换语言验证
-- CI 集成准备：提供 `npx playwright test` 命令，后续接入 CI 时可直接使用
+- CI 集成准备：提供 `pnpm exec playwright test` 命令，后续接入 CI 时可直接使用
 
 ### 10.5 文档更新
 
@@ -98,7 +98,7 @@
 
 ### 10.6 构建验证
 
-- 确认 `npm run build` 产物结构：
+- 确认 `pnpm build` 产物结构：
   - `dist/index.html` 作为入口
   - `dist/assets/` 包含 JS/CSS/图片等静态资源
   - 所有资源路径为相对路径（适配后端提供静态文件）
@@ -118,11 +118,11 @@
 | 7 | 色彩对比度 | 用 axe 检查 | 无对比度违规 |
 | 8 | 13 种语言 | 逐一切换每种语言 | 所有文本正确翻译，无 raw key 暴露 |
 | 9 | 翻译完整性 | 用 i18next 的 `missingKeyHandler` 检查 | 无缺失的翻译 key |
-| 10 | E2E 登录 | `npx playwright test tests/login.spec.ts` | 测试通过 |
-| 11 | E2E 主机管理 | `npx playwright test tests/hosts.spec.ts` | 测试通过 |
-| 12 | E2E RBD | `npx playwright test tests/rbd.spec.ts` | 测试通过 |
-| 13 | 构建产物 | `npm run build` | `dist/` 生成，无错误 |
-| 14 | 构建产物服务 | 用 `npx serve dist` 访问 | 应用正常运行 |
+| 10 | E2E 登录 | `pnpm exec playwright test tests/login.spec.ts` | 测试通过 |
+| 11 | E2E 主机管理 | `pnpm exec playwright test tests/hosts.spec.ts` | 测试通过 |
+| 12 | E2E RBD | `pnpm exec playwright test tests/rbd.spec.ts` | 测试通过 |
+| 13 | 构建产物 | `pnpm build` | `dist/` 生成，无错误 |
+| 14 | 构建产物服务 | 用 `pnpm dlx serve dist` 访问 | 应用正常运行 |
 | 15 | 资源路径 | 检查构建产物中的资源引用 | 均为相对路径 |
 | 16 | 功能回归 | 逐一验证每个页面的核心功能 | 与 Angular 版本功能对等 |
 | 17 | SSO 完整流程 | 配置 SAML2 后完成完整 SSO 流程 | 登录 → 使用 → 登出均正常 |

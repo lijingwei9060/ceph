@@ -4,13 +4,46 @@
 
 在 `front2/` 目录下初始化完整的 React + TypeScript 项目工具链，使开发环境可运行、构建产物可与 Ceph 后端对接，为后续所有阶段提供可依赖的项目骨架。
 
-完成标志：开发者执行 `npm run dev` 即可在浏览器中看到带侧边栏占位和路由导航的空白应用，且 API 代理能正确转发到后端。
+完成标志：开发者执行 `pnpm dev` 即可在浏览器中看到带侧边栏占位和路由导航的空白应用，且 API 代理能正确转发到后端。
 
 ## 工作内容
 
+### 0.0 环境准备
+
+- Node.js: 22 LTS（通过 nvm 管理）
+- 包管理器: pnpm（通过 corepack 启用）
+- 初始化步骤：
+
+```bash
+nvm install 22
+nvm use 22
+nvm alias default 22
+corepack enable
+corepack prepare pnpm@latest --activate
+node -v   # 确认 v22.x
+pnpm -v   # 确认 pnpm 版本
+```
+
+- 在 `package.json` 中声明包管理器（确保团队一致性）：
+
+```json
+{
+  "packageManager": "pnpm@<版本号>"
+}
+```
+
+- 创建 `.npmrc`（pnpm 配置）：
+
+```ini
+shamefully-hoist=true
+strict-peer-dependencies=false
+```
+
+> `shamefully-hoist=true` 让 pnpm 将依赖提升到根目录 node_modules，兼容部分需要隐式依赖的第三方库（如 shadcn/ui 组件依赖）。
+
 ### 0.1 初始化 Vite + React + TypeScript 项目
 
-- 使用 `npm create vite@latest front2 -- --template react-ts` 创建项目
+- 使用 `pnpm create vite front2 --template react-ts` 创建项目
 - 配置 `tsconfig.json`：启用 `strict`、`noUnusedLocals`、`noUnusedParameters`
 - 配置路径别名：`@/` → `src/`，需要在 `vite.config.ts` 的 `resolve.alias` 和 `tsconfig.json` 的 `paths` 中同步设置
 - 创建目录结构：
@@ -35,14 +68,16 @@ front2/
 ├── index.html
 ├── vite.config.ts
 ├── tsconfig.json
-└── package.json
+├── package.json
+├── pnpm-lock.yaml
+└── .npmrc
 ```
 
 ### 0.2 安装和配置 Tailwind CSS + shadcn/ui
 
 - 安装 Tailwind CSS 4.x 及 Vite 插件 `@tailwindcss/vite`
 - 在 `index.css` 中引入 `@import "tailwindcss"`
-- 执行 `npx shadcn@latest init`，选择：
+- 执行 `pnpm dlx shadcn@latest init`，选择：
   - Style: Default
   - Base color: Slate
   - CSS variables: yes
@@ -55,20 +90,27 @@ front2/
 
 ### 0.3 配置开发代理
 
-- 在 `vite.config.ts` 中配置 proxy：
+- 在 `vite.config.ts` 中配置 proxy（通过环境变量注入 Ceph 后端地址）：
 
 ```ts
-server: {
-  port: 4201,
-  proxy: {
-    '/api': { target: 'https://localhost:8443', secure: false },
-    '/ui-api': { target: 'https://localhost:8443', secure: false },
-    '/docs': { target: 'https://localhost:8443', secure: false },
-  }
-}
+const dashboardUrl = process.env.CEPH_DASHBOARD_URL || 'https://localhost:8443';
+
+export default defineConfig({
+  server: {
+    port: 4201,
+    proxy: {
+      '/api': { target: dashboardUrl, secure: false, changeOrigin: true },
+      '/ui-api': { target: dashboardUrl, secure: false, changeOrigin: true },
+      '/auth': { target: dashboardUrl, secure: false, changeOrigin: true },
+      '/docs': { target: dashboardUrl, secure: false, changeOrigin: true },
+    },
+  },
+});
 ```
 
+- 启动命令：`CEPH_DASHBOARD_URL=https://<host>:<port> pnpm dev`
 - 端口 4201 避免与现有 Angular 开发服务器 (4200) 冲突
+- Rook 环境下获取地址：`kubectl get svc -n rook-ceph rook-ceph-mgr-dashboard-external-https`
 
 ### 0.4 配置 i18n
 
@@ -115,7 +157,7 @@ server: {
 
 | # | 校验项 | 操作 | 预期结果 |
 |---|--------|------|----------|
-| 1 | 项目启动 | `npm run dev` | 浏览器访问 `http://localhost:4201` 显示空白应用 |
+| 1 | 项目启动 | `pnpm dev` | 浏览器访问 `http://localhost:4201` 显示空白应用 |
 | 2 | API 代理 | 启动 Ceph 后端后，浏览器访问 `/api/health` | 返回后端 JSON 数据，无 CORS 错误 |
 | 3 | Tailwind | 在任意组件中使用 `className="text-blue-600"` | 文字显示蓝色，无样式丢失 |
 | 4 | shadcn/ui | 在页面中渲染 `<Button>Test</Button>` | 按钮渲染正常，主题色正确 |
@@ -123,7 +165,7 @@ server: {
 | 6 | 路由 | 浏览器直接访问 `http://localhost:4201/#/test` | Hash 路由正常，页面无 404 |
 | 7 | API 客户端 | 用 ky 实例请求 `/api/summary` | 请求头包含 `Accept: application/vnd.ceph.api.v1.0+json` |
 | 8 | 401 拦截 | 未登录时请求需认证的 API | 自动重定向到 `/#/login` |
-| 9 | 构建产物 | `npm run build` | `dist/` 目录生成，无构建错误 |
-| 10 | 单元测试 | `npm run test` | Vitest 运行成功（即使 0 用例） |
-| 11 | Lint | `npm run lint` | ESLint 运行成功，无错误 |
+| 9 | 构建产物 | `pnpm build` | `dist/` 目录生成，无构建错误 |
+| 10 | 单元测试 | `pnpm test` | Vitest 运行成功（即使 0 用例） |
+| 11 | Lint | `pnpm lint` | ESLint 运行成功，无错误 |
 | 12 | 路径别名 | import 组件使用 `@/components/ui/button` | 解析正常，无 TS 报错 |

@@ -125,7 +125,7 @@ export default defineConfig({
 启动命令：
 
 ```bash
-CEPH_DASHBOARD_URL=https://192.168.1.100:31159 npm run dev
+CEPH_DASHBOARD_URL=https://192.168.1.100:31159 pnpm dev
 ```
 
 ### 3. 处理 CORS（如需要）
@@ -247,7 +247,7 @@ docker run -d --name ceph-proxy \
 
 ```bash
 cd front2
-npm run build
+pnpm build
 # 产物在 dist/ 目录
 ```
 
@@ -403,7 +403,7 @@ export function createProxyClient(proxyToken: string): KyInstance {
 | 1 | 获取 Rook Dashboard 地址和密码 | 见上方脚本 | 输出 URL 和密码 |
 | 2 | 验证后端可访问 | `curl -k -H "Accept: application/vnd.ceph.api.v1.0+json" $URL/api/health` | 返回 JSON |
 | 3 | 验证登录 | 用 `jq -n --arg` 构造 JSON + 加 `Accept` 头（见上方示例） | 返回 token |
-| 4 | 启动 Vite 开发服务器 | `CEPH_DASHBOARD_URL=... npm run dev` | localhost:4201 可访问 |
+| 4 | 启动 Vite 开发服务器 | `CEPH_DASHBOARD_URL=... pnpm dev` | localhost:4201 可访问 |
 | 5 | 测试 API 代理 | 浏览器访问 `http://localhost:4201/api/health` | 返回后端 JSON |
 | 6 | 测试登录 | 在 React 页面输入用户名密码 | 登录成功，跳转概览页 |
 | 7 | 测试 Token 传递 | 登录后刷新页面 | 自动恢复登录态（localStorage token） |
