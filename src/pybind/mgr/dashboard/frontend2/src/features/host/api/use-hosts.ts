@@ -3,12 +3,11 @@ import { apiClient } from '@/lib/api-client';
 import { hostSchema } from '@/types/schemas';
 import type { Host, HostDevice, HostDaemon } from '@/types';
 
-export function useHosts(facts = true) {
+export function useHosts() {
   return useQuery<Host[]>({
-    queryKey: ['hosts', { facts }],
+    queryKey: ['hosts'],
     queryFn: async () => {
-      const path = facts ? 'host?facts=true' : 'host';
-      const data = await apiClient.get(path).json<unknown[]>();
+      const data = await apiClient.get('host').json<unknown[]>();
       return data.map((item) => hostSchema.parse(item) as Host);
     },
   });

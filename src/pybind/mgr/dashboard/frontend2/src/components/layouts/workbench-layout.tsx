@@ -41,9 +41,9 @@ export function WorkbenchLayout() {
     if (!isItemVisible(item, hasPermission, featureToggles)) return null;
     if (item.children) {
       return (
-        <SidebarMenuItem key={item.key}>
+        <div key={item.key} className={cn(depth > 0 && 'pl-4')}>
           <SidebarMenuButton
-            className={cn(depth > 0 && 'pl-4')}
+            className="w-full"
             tooltip={t(`nav.${item.key}`, item.label)}
           >
             {item.icon && <span className="text-xs">{item.icon}</span>}
@@ -52,7 +52,7 @@ export function WorkbenchLayout() {
           <div className="ml-4">
             {item.children.map((child) => renderNavItem(child, depth + 1))}
           </div>
-        </SidebarMenuItem>
+        </div>
       );
     }
     return (
