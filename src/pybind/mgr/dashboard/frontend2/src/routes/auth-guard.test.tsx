@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router';
 import { AuthGuard } from '@/routes/auth-guard';
-import { LoginPage } from '@/routes/login-page';
+import { LoginPage } from '@/features/auth/pages/login';
 import { useAuthStore } from '@/stores/auth-store';
 
 function renderWithRouter(initialPath: string) {
@@ -60,7 +60,10 @@ describe('LoginPage', () => {
   it('shows error when submitting empty fields', async () => {
     const user = userEvent.setup();
     renderWithRouter('/login');
-    await user.click(screen.getByText('Sign In'));
-    expect(screen.getByText('Authentication failed')).toBeInTheDocument();
+    await act(async () => {
+      await user.click(screen.getByText('Sign In'));
+    });
+    expect(screen.getByText('Username is required')).toBeInTheDocument();
+    expect(screen.getByText('Password is required')).toBeInTheDocument();
   });
 });
