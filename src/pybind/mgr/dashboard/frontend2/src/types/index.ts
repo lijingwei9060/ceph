@@ -1,15 +1,25 @@
-export interface ClusterSummary {
-  fsid: string;
-  health: {
-    status: string;
-    checks: Record<string, { severity: string; summary: { message: string } }>;
-  };
-  rbd_mirroring: Record<string, unknown>;
-  rgw: Record<string, unknown>;
-}
-
-export interface AuthUser {
-  username: string;
-  permissions: Record<string, string[]>;
-  sUserRoles: string[];
-}
+export type { LoginResponse, Credentials, AuthCheckResponse, AuthLogoutResponse } from './auth';
+export type {
+  Permission,
+  Permissions,
+  PermissionScope,
+} from './permissions';
+export {
+  SCOPE_SERVER_KEY,
+  createPermission,
+  createPermissions,
+  emptyPermissions,
+} from './permissions';
+export type {
+  HealthStatus,
+  HealthCheck,
+  ClusterHealth,
+  ExecutingTask,
+  FinishedTask,
+  Summary,
+  FeatureToggles,
+  FeatureToggleKey,
+} from './health';
+export type { Host, HostDevice, HostDaemon } from './host';
+export type { Osd, OsdStats, OsdStoreStats, OsdSettings } from './osd';
+export type { ClusterStatus, ClusterFlag, Flag } from './cluster';

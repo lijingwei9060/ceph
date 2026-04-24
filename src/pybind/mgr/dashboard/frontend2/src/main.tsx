@@ -4,8 +4,11 @@ import { RouterProvider } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { router } from '@/routes';
+import { useAuthStore } from '@/stores/auth-store';
 import '@/i18n';
 import './index.css';
+
+useAuthStore.getState().loadFromStorage();
 
 const queryClient = new QueryClient({
   defaultOptions: {

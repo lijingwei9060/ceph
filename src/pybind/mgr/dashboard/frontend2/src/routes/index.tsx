@@ -2,7 +2,7 @@ import { createHashRouter, Navigate } from 'react-router';
 import App from '@/App';
 import { PlaceholderPage } from './placeholder-page';
 import { LoginPage } from './login-page';
-import { AuthGuard } from './auth-guard';
+import { AuthGuard, ChangePasswordGuard } from './auth-guard';
 
 export const router = createHashRouter([
   {
@@ -10,10 +10,16 @@ export const router = createHashRouter([
     element: <LoginPage />,
   },
   {
+    path: '/change-password',
+    element: <PlaceholderPage title="Change Password" />,
+  },
+  {
     path: '/',
     element: (
       <AuthGuard>
-        <App />
+        <ChangePasswordGuard>
+          <App />
+        </ChangePasswordGuard>
       </AuthGuard>
     ),
     children: [
