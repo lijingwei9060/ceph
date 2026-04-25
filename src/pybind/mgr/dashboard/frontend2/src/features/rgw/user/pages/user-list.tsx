@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Users, RefreshCw, Trash2 } from 'lucide-react';
-import { useRgwUsers, useDeleteRgwUser } from '../api/use-rgw-user';
+import { Users, RefreshCw, Trash2, Plus } from 'lucide-react';
+import { useRgwUsers, useDeleteRgwUser, useCreateRgwUser } from '../api/use-rgw-user';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,11 @@ export function RgwUserListPage() {
   const { data: users = [], isLoading, refetch } = useRgwUsers();
   const deleteUser = useDeleteRgwUser();
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [newUid, setNewUid] = useState('');
+  const [newDisplayName, setNewDisplayName] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const createUser = useCreateRgwUser();
 
   const handleDelete = async () => {
     if (!deleteConfirm) return;
@@ -95,10 +101,16 @@ export function RgwUserListPage() {
           <Users className="h-5 w-5 text-muted-foreground" />
           <h1 className="text-2xl font-semibold">RGW Users</h1>
         </div>
-        <Button variant="outline" size="sm" onClick={() => refetch()}>
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh
+          </Button>
+          <Button size="sm" onClick={() => setShowCreate(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Create
+          </Button>
+        </div>
       </div>
 
       <DataTable
@@ -129,6 +141,52 @@ export function RgwUserListPage() {
               {deleteUser.isPending ? 'Deleting...' : 'Delete'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create RGW User</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">User ID</label>
+              <Input value={newUid} onChange={(e) => setNewUid(e.target.value)} placeholder="my-user" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Display Name</label>
+              <Input value={newDisplayName} onChange={(e) => setNewDisplayName(e.target.value)} placeholder="My User" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Email (optional)</label>
+              <Input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="user@example.com" />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
+              <Button
+                disabled={createUser.isPending || !newUid || !newDisplayName}
+                onClick={async () => {
+                  try {
+                    await createUser.mutateAsync({
+                      uid: newUid,
+                      display_name: newDisplayName,
+                      email: newEmail || undefined,
+                    });
+                    toast.success(`User ${newUid} created`);
+                    setShowCreate(false);
+                    setNewUid('');
+                    setNewDisplayName('');
+                    setNewEmail('');
+                  } catch {
+                    toast.error('Failed to create user');
+                  }
+                }}
+              >
+                {createUser.isPending ? 'Creating...' : 'Create'}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -20,9 +20,13 @@ import { RbdListPage } from '@/features/block/rbd/pages/rbd-list';
 import { RbdTrashPage } from '@/features/block/rbd/pages/rbd-trash';
 import { MirroringOverviewPage } from '@/features/block/mirroring/pages/mirroring-overview';
 import { IscsiOverviewPage } from '@/features/block/iscsi/pages/iscsi-overview';
+import { NfsListPage } from '@/features/block/nfs/pages/nfs-list';
+import { CephFsListPage } from '@/features/filesystem/pages/cephfs-list';
 import { RgwDaemonListPage } from '@/features/rgw/daemon/pages/daemon-list';
 import { RgwUserListPage } from '@/features/rgw/user/pages/user-list';
 import { RgwBucketListPage } from '@/features/rgw/bucket/pages/bucket-list';
+import { MonitoringPage } from '@/features/monitoring/pages/monitoring-page';
+import { SettingsListPage } from '@/features/settings/pages/settings-list';
 
 export const router = createHashRouter([
   {
@@ -62,20 +66,20 @@ export const router = createHashRouter([
       { path: 'crush-map', element: <CrushMapPage /> },
       { path: 'mgr-modules', element: <ModuleListPage /> },
       { path: 'logs', element: <LogsPage /> },
-      { path: 'monitoring', element: <PageWrapper title="Monitoring" /> },
+      { path: 'monitoring', element: <MonitoringPage /> },
       { path: 'pools', element: <PoolListPage /> },
       { path: 'block', element: <Navigate to="/block/rbd" replace /> },
       { path: 'block/rbd', element: <RbdListPage /> },
       { path: 'block/rbd/trash', element: <RbdTrashPage /> },
       { path: 'block/mirroring', element: <MirroringOverviewPage /> },
       { path: 'block/iscsi', element: <IscsiOverviewPage /> },
-      { path: 'nfs', element: <PageWrapper title="NFS" /> },
-      { path: 'cephfs', element: <PageWrapper title="CephFS" /> },
+      { path: 'nfs', element: <NfsListPage /> },
+      { path: 'cephfs', element: <CephFsListPage /> },
       { path: 'rgw', element: <Navigate to="/rgw/daemon" replace /> },
       { path: 'rgw/daemon', element: <RgwDaemonListPage /> },
       { path: 'rgw/user', element: <RgwUserListPage /> },
       { path: 'rgw/bucket', element: <RgwBucketListPage /> },
-      { path: 'settings', element: <PageWrapper title="Settings" /> },
+      { path: 'settings', element: <SettingsListPage /> },
     ],
   },
   { path: '*', element: <Navigate to="/dashboard" replace /> },

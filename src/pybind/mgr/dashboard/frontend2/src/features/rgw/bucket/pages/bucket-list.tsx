@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Archive, RefreshCw, Trash2 } from 'lucide-react';
-import { useRgwBuckets, useDeleteRgwBucket } from '../api/use-rgw-bucket';
+import { Archive, RefreshCw, Trash2, Plus } from 'lucide-react';
+import { useRgwBuckets, useDeleteRgwBucket, useCreateRgwBucket } from '../api/use-rgw-bucket';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
@@ -20,7 +21,11 @@ export function RgwBucketListPage() {
   const { t } = useTranslation();
   const { data: buckets = [], isLoading, refetch } = useRgwBuckets(true);
   const deleteBucket = useDeleteRgwBucket();
+  const createBucket = useCreateRgwBucket();
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [newBucketName, setNewBucketName] = useState('');
+  const [newBucketOwner, setNewBucketOwner] = useState('');
 
   const handleDelete = async () => {
     if (!deleteConfirm) return;
@@ -110,10 +115,16 @@ export function RgwBucketListPage() {
           <Archive className="h-5 w-5 text-muted-foreground" />
           <h1 className="text-2xl font-semibold">RGW Buckets</h1>
         </div>
-        <Button variant="outline" size="sm" onClick={() => refetch()}>
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh
+          </Button>
+          <Button size="sm" onClick={() => setShowCreate(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Create
+          </Button>
+        </div>
       </div>
 
       <DataTable
@@ -145,6 +156,43 @@ export function RgwBucketListPage() {
               {deleteBucket.isPending ? 'Deleting...' : 'Delete'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Bucket</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Bucket Name</label>
+              <Input value={newBucketName} onChange={(e) => setNewBucketName(e.target.value)} placeholder="my-bucket" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Owner (User ID)</label>
+              <Input value={newBucketOwner} onChange={(e) => setNewBucketOwner(e.target.value)} placeholder="admin" />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
+              <Button
+                disabled={createBucket.isPending || !newBucketName || !newBucketOwner}
+                onClick={async () => {
+                  try {
+                    await createBucket.mutateAsync({ bucket: newBucketName, uid: newBucketOwner });
+                    toast.success(`Bucket ${newBucketName} created`);
+                    setShowCreate(false);
+                    setNewBucketName('');
+                    setNewBucketOwner('');
+                  } catch {
+                    toast.error('Failed to create bucket');
+                  }
+                }}
+              >
+                {createBucket.isPending ? 'Creating...' : 'Create'}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

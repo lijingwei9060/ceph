@@ -57,3 +57,20 @@ export function useDeleteRgwBucket() {
     },
   });
 }
+
+export function useCreateRgwBucket() {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, {
+    bucket: string;
+    uid: string;
+    zonegroup?: string;
+    placement_target?: string;
+  }>({
+    mutationFn: async (data) => {
+      await apiClient.put('rgw/bucket', { json: data });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rgw', 'buckets'] });
+    },
+  });
+}

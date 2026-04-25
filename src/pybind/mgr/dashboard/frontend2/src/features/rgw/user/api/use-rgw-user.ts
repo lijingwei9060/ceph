@@ -90,3 +90,21 @@ export function useDeleteRgwUser() {
     },
   });
 }
+
+export function useUpdateRgwUser() {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, {
+    uid: string;
+    display_name?: string;
+    email?: string;
+    max_buckets?: number;
+    suspended?: boolean;
+  }>({
+    mutationFn: async ({ uid, ...data }) => {
+      await apiClient.post(`rgw/user/${uid}`, { json: data });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rgw', 'user-ids'] });
+    },
+  });
+}
