@@ -26,6 +26,9 @@ Phase 4 完成后，前端存在多个与后端 API 对接的 bug，本次集中
 | 13 | Sidebar 压在 main 内容上方 | Tailwind v4 的 `w-[--sidebar-width]` 语法生成无效 CSS `width:--sidebar-width`（应为 `var(--sidebar-width)`），导致 spacer div 宽度为 0，fixed 侧边栏覆盖内容区 |
 | 14 | Sidebar / main header 高度不一致 | Sidebar header 用 `py-3` 约 53px，main header 用 `h-12`=48px，统一为 `h-12` |
 | 15 | Sidebar 菜单文字大小不一致 | `item.icon` 是 Lucide 图标名字符串，被当作 `text-xs` 文字渲染，与 label 默认字号不统一；改为真正的 Lucide 图标组件 |
+| 16 | Hosts 表格数据全挤到 Hostname 列 | `DataTable` 组件 `flexRender` 渲染 cell 内容时未包裹 `<td>` 标签，浏览器自动修正 DOM 把所有内容塞入第一列 |
+| 17 | Monitors 页面表格为空 | API 返回 `{mon_status: {...}, in_quorum: [...], out_quorum: [...]}` 三层包装，前端把整个响应当成 `mon_status` 直接访问，导致 `monmap` 为 `undefined` |
+| 18 | Services 页面报错渲染对象 | `status` 是对象 `{container_image_id, size, running, ...}`，页面直接 `{row.original.status}` 把对象当 React child 渲染；`hostname`/`version` 字段不存在于 service 项中 |
 
 ### 1.2 新增 `cephAcceptHeader()` 工具函数
 

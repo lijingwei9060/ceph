@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Bell, CheckCircle, XCircle } from 'lucide-react';
+import { Bell, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { useServices } from '../api/use-service';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
@@ -18,36 +18,53 @@ export function ServiceListPage() {
       ),
     },
     {
-      accessorKey: 'service_id',
-      header: 'ID',
-      cell: ({ row }) => row.original.service_id ?? '-',
+      accessorKey: 'service_name',
+      header: 'Name',
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.service_name}</span>
+      ),
     },
     {
-      accessorKey: 'hostname',
-      header: 'Host',
-      cell: ({ row }) => row.original.hostname ?? '-',
+      accessorKey: 'placement',
+      header: 'Placement',
+      cell: ({ row }) => {
+        const p = row.original.placement;
+        if (!p) return '-';
+        if (p.hosts?.length) return p.hosts.join(', ');
+        if (p.count != null) return `${p.count} daemons`;
+        if (p.label) return `label: ${p.label}`;
+        return '-';
+      },
     },
     {
-      accessorKey: 'status',
+      id: 'status',
       header: 'Status',
       cell: ({ row }) => {
-        const ok = row.original.status === 'running' || row.original.status === 'active';
+        const s = row.original.status;
+        const allRunning = s.running >= s.size && s.size > 0;
+        const partial = s.running > 0 && s.running < s.size;
         return (
-          <Badge variant={ok ? 'default' : 'secondary'} className="gap-1">
-            {ok ? (
+          <Badge variant={allRunning ? 'default' : partial ? 'secondary' : 'destructive'} className="gap-1">
+            {allRunning ? (
               <CheckCircle className="h-3 w-3 text-green-500" />
+            ) : partial ? (
+              <AlertTriangle className="h-3 w-3 text-yellow-500" />
             ) : (
-              <XCircle className="h-3 w-3 text-muted-foreground" />
+              <XCircle className="h-3 w-3" />
             )}
-            {row.original.status}
+            {s.running}/{s.size} running
           </Badge>
         );
       },
     },
     {
-      accessorKey: 'version',
-      header: 'Version',
-      cell: ({ row }) => row.original.version ?? '-',
+      id: 'image',
+      header: 'Image',
+      cell: ({ row }) => (
+        <span className="text-xs text-muted-foreground truncate max-w-[200px] block">
+          {row.original.status.container_image_name || '-'}
+        </span>
+      ),
     },
   ];
 

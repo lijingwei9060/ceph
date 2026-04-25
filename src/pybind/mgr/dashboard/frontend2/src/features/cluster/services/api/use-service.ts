@@ -3,7 +3,7 @@ import { apiClient, cephAcceptHeader } from '@/lib/api-client';
 
 export interface Service {
   service_type: string;
-  service_id: string;
+  service_id?: string;
   service_name: string;
   placement?: {
     label?: string;
@@ -11,12 +11,15 @@ export interface Service {
     count?: number;
   };
   spec?: Record<string, unknown>;
-  status?: {
+  status: {
     container_image_id?: string;
     container_image_name?: string;
-    running?: number;
-    size?: number;
+    running: number;
+    size: number;
+    last_refresh?: string;
+    created?: string;
   };
+  events?: Array<{ timestamp: string; message: string }>;
 }
 
 export function useServices(serviceName?: string) {

@@ -18,10 +18,12 @@ export function MonitorListPage() {
     );
   }
 
-  const mons = monitorStatus?.monmap?.mons ?? [];
-  const quorum = monitorStatus?.quorum ?? [];
-  const inQuorumCount = quorum.length;
-  const outQuorumCount = mons.length - inQuorumCount;
+  const mons = monitorStatus?.mon_status?.monmap?.mons ?? [];
+  const quorum = monitorStatus?.mon_status?.quorum ?? [];
+  const inQuorum = monitorStatus?.in_quorum ?? [];
+  const outQuorum = monitorStatus?.out_quorum ?? [];
+  const inQuorumCount = inQuorum.length;
+  const outQuorumCount = outQuorum.length;
 
   return (
     <div className="space-y-4">

@@ -1,6 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 
+export interface MonEntry {
+  rank: number;
+  name: string;
+  addr: string;
+  public_addrs?: { addrvec: Array<{ type: string; addr: string; nonce?: number }> };
+  public_addr?: string;
+  priority?: number;
+  weight?: number;
+  stats?: { num_sessions: number[] };
+}
+
 export interface MonitorStatus {
   name: string;
   rank: number;
@@ -12,20 +23,23 @@ export interface MonitorStatus {
   monmap: {
     epoch: number;
     fsid: string;
-    mons: Array<{
-      rank: number;
-      name: string;
-      addr: string;
-      public_addrs?: { addrvec: Array<{ type: string; addr: string }> };
-      priority?: number;
-      weight?: number;
-    }>;
+    modified?: string;
+    created?: string;
+    min_mon_release?: number;
+    min_mon_release_name?: string;
+    mons: MonEntry[];
   };
 }
 
+export interface MonitorResponse {
+  mon_status: MonitorStatus;
+  in_quorum: MonEntry[];
+  out_quorum: MonEntry[];
+}
+
 export function useMonitors() {
-  return useQuery<MonitorStatus>({
+  return useQuery<MonitorResponse>({
     queryKey: ['monitors'],
-    queryFn: async () => apiClient.get('monitor').json<MonitorStatus>(),
+    queryFn: async () => apiClient.get('monitor').json<MonitorResponse>(),
   });
 }
