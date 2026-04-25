@@ -68,9 +68,7 @@ export function useDeleteCrushRule() {
   const queryClient = useQueryClient();
   return useMutation<void, Error, string>({
     mutationFn: async (name) => {
-      await apiClient.delete(`crush_rule/${name}`, {
-        headers: { Accept: cephAcceptHeader(2, 0) },
-      });
+      await apiClient.delete(`crush_rule/${name}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crush-rules'] });
@@ -91,7 +89,6 @@ export function useCreateCrushRule() {
     mutationFn: async (data) => {
       await apiClient.post('crush_rule', {
         json: data,
-        headers: { Accept: cephAcceptHeader(2, 0) },
       });
     },
     onSuccess: () => {

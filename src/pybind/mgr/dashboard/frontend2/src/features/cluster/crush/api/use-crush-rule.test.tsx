@@ -76,7 +76,7 @@ describe('useDeleteCrushRule', () => {
     vi.clearAllMocks();
   });
 
-  it('calls DELETE /api/crush_rule/{name} with v2.0 Accept header', async () => {
+  it('calls DELETE /api/crush_rule/{name} with default v1.0 Accept header', async () => {
     (apiClient.delete as ReturnType<typeof vi.fn>).mockReturnValue({
       json: () => Promise.resolve(undefined),
     });
@@ -86,8 +86,6 @@ describe('useDeleteCrushRule', () => {
     result.current.mutate('test-rule');
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(apiClient.delete).toHaveBeenCalledWith('crush_rule/test-rule', {
-      headers: { Accept: 'application/vnd.ceph.api.v2.0+json' },
-    });
+    expect(apiClient.delete).toHaveBeenCalledWith('crush_rule/test-rule');
   });
 });

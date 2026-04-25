@@ -29,6 +29,8 @@ Phase 4 完成后，前端存在多个与后端 API 对接的 bug，本次集中
 | 16 | Hosts 表格数据全挤到 Hostname 列 | `DataTable` 组件 `flexRender` 渲染 cell 内容时未包裹 `<td>` 标签，浏览器自动修正 DOM 把所有内容塞入第一列 |
 | 17 | Monitors 页面表格为空 | API 返回 `{mon_status: {...}, in_quorum: [...], out_quorum: [...]}` 三层包装，前端把整个响应当成 `mon_status` 直接访问，导致 `monmap` 为 `undefined` |
 | 18 | Services 页面报错渲染对象 | `status` 是对象 `{container_image_id, size, running, ...}`，页面直接 `{row.original.status}` 把对象当 React child 渲染；`hostname`/`version` 字段不存在于 service 项中 |
+| 19 | `uiApiClient` 所有端点返回 415 | `uiApiClient` 默认 Accept 设为 `application/json`，但 UIRouter 的 RESTController 同样调用 `APIVersion.from_mime_type()` 解析版本号，plain `application/json` 不匹配正则 → 415 |
+| 20 | Crush Rule create/delete 返回 415 | 后端 create/delete 方法无 `@MethodMap` 装饰器，默认 v1.0；前端错误使用 `cephAcceptHeader(2, 0)` |
 
 ### 1.2 新增 `cephAcceptHeader()` 工具函数
 

@@ -61,10 +61,13 @@ export const apiClient: KyInstance = ky.create({
 // These are used by passing { headers: { Accept: cephAcceptHeader(x, y) } } to individual calls
 
 // UIRouter endpoints: /ui-api/...
+// UIRouter controllers also inherit from RESTController, which parses the
+// Accept header version via APIVersion.from_mime_type(). Plain
+// application/json causes 415 just like on APIRouter. Use v1.0 as default.
 export const uiApiClient: KyInstance = ky.create({
   prefixUrl: '/ui-api',
   headers: {
-    Accept: 'application/json',
+    Accept: 'application/vnd.ceph.api.v1.0+json',
   },
   hooks: {
     beforeRequest: createAuthHook(),
