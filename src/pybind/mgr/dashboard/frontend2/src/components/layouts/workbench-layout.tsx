@@ -16,7 +16,21 @@ import { Toaster } from '@/components/ui/sonner';
 import { Button } from '@/components/ui/button';
 import { useNavigate, useLocation } from 'react-router';
 import { useAuth } from '@/hooks/use-auth';
-import { LogOut, Bell } from 'lucide-react';
+import {
+  LayoutDashboard, Server, Database, HardDrive, FolderOpen,
+  Files, Cloud, LogOut, Bell,
+} from 'lucide-react';
+
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  LayoutDashboard, Server, Database, HardDrive, FolderOpen, Files, Cloud,
+};
+
+function NavIcon({ name }: { name?: string }) {
+  if (!name) return null;
+  const Icon = ICON_MAP[name];
+  if (!Icon) return null;
+  return <Icon className="h-4 w-4 shrink-0" />;
+}
 import { useFeatureToggles, useSummary } from '@/features/health/api/use-health';
 import { usePermission } from '@/hooks/use-permission';
 import { NAV_CONFIG, isItemVisible, type NavItem } from '@/routes/nav-config';
@@ -46,7 +60,7 @@ export function WorkbenchLayout() {
             className="w-full"
             tooltip={t(`nav.${item.key}`, item.label)}
           >
-            {item.icon && <span className="text-xs">{item.icon}</span>}
+            <NavIcon name={item.icon} />
             <span>{item.label}</span>
           </SidebarMenuButton>
           <div className="ml-4">
@@ -63,7 +77,7 @@ export function WorkbenchLayout() {
           className={cn(depth > 0 && 'pl-4')}
           tooltip={t(`nav.${item.key}`, item.label)}
         >
-          {item.icon && <span className="text-xs">{item.icon}</span>}
+          <NavIcon name={item.icon} />
           <span>{item.label}</span>
         </SidebarMenuButton>
       </SidebarMenuItem>
@@ -73,7 +87,7 @@ export function WorkbenchLayout() {
   return (
     <SidebarProvider>
       <Sidebar>
-        <SidebarHeader className="border-b px-4 py-3">
+        <SidebarHeader className="h-12 border-b px-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-sidebar-primary">
               {t('auth.loginTitle')}

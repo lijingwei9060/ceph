@@ -23,6 +23,9 @@ Phase 4 完成后，前端存在多个与后端 API 对接的 bug，本次集中
 | 10 | RGW Bucket 列表 API 版本 | 需 `cephAcceptHeader(1, 1)` Accept 头 |
 | 11 | Logs 接口格式错误 | 端点为 `/api/logs/all`，返回 `{clog:[], audit_log:[]}` |
 | 12 | 登录 JSON 传参问题 | `apiClient.post('auth', { json: credentials })` 使用 JSON body，配合 v1.0 Accept 头 |
+| 13 | Sidebar 压在 main 内容上方 | Tailwind v4 的 `w-[--sidebar-width]` 语法生成无效 CSS `width:--sidebar-width`（应为 `var(--sidebar-width)`），导致 spacer div 宽度为 0，fixed 侧边栏覆盖内容区 |
+| 14 | Sidebar / main header 高度不一致 | Sidebar header 用 `py-3` 约 53px，main header 用 `h-12`=48px，统一为 `h-12` |
+| 15 | Sidebar 菜单文字大小不一致 | `item.icon` 是 Lucide 图标名字符串，被当作 `text-xs` 文字渲染，与 label 默认字号不统一；改为真正的 Lucide 图标组件 |
 
 ### 1.2 新增 `cephAcceptHeader()` 工具函数
 
@@ -30,7 +33,23 @@ Phase 4 完成后，前端存在多个与后端 API 对接的 bug，本次集中
 - **APIRouter** (`/api/`): RESTController 端点，必须使用版本化 Accept 头
 - **UIRouter** (`/ui-api/`): 使用 `uiApiClient`，普通 `application/json` 即可
 
-### 1.3 新页面实现
+### 1.3 Tailwind v4 CSS 变量语法 Bug 修复
+
+Tailwind v4 的任意值语法 `w-[--sidebar-width]` 生成无效 CSS `width: --sidebar-width`（浏览器忽略），而非 `width: var(--sidebar-width)`。这是导致侧边栏覆盖 main 内容的根本原因——spacer div 宽度为 0 无法占位。修复方式为将所有 `--[varName]` 改为 `var(--varName)`：
+
+| 文件 | 修复项 |
+|------|--------|
+| `components/ui/sidebar.tsx` | `w-[--sidebar-width]` → `w-[var(--sidebar-width)]` (4处)，`w-[--sidebar-width-icon]` → `w-[var(--sidebar-width-icon)]` (2处)，`max-w-[--skeleton-width]` → `max-w-[var(--skeleton-width)]` |
+| `components/ui/dropdown-menu.tsx` | `origin-[--radix-dropdown-menu-content-transform-origin]` → `origin-[var(...)]` (2处) |
+| `components/ui/tooltip.tsx` | `origin-[--radix-tooltip-content-transform-origin]` → `origin-[var(...)]` |
+| `components/ui/popover.tsx` | `origin-[--radix-popover-content-transform-origin]` → `origin-[var(...)]` |
+| `components/ui/select.tsx` | `origin-[--radix-select-content-transform-origin]` → `origin-[var(...)]`，`max-h-[--radix-select-content-available-height]` → `max-h-[var(...)]` |
+
+### 1.4 Sidebar 导航图标修复
+
+`nav-config.ts` 中 `icon` 字段存储的是 Lucide 图标名字符串（如 `'Server'`、`'HardDrive'`），原渲染方式直接用 `<span className="text-xs">{item.icon}</span>` 输出为文字，导致菜单行内出现 `text-xs` 的英文图标名 + 默认字号的 label，视觉不统一。修复方式：建立 `ICON_MAP` 将字符串名映射为真正的 Lucide 图标组件，统一渲染为 `<Icon className="h-4 w-4" />`。
+
+### 1.5 新页面实现
 
 | 页面 | 路由 | 文件 |
 |------|------|------|
@@ -47,7 +66,7 @@ Phase 4 完成后，前端存在多个与后端 API 对接的 bug，本次集中
 | RGW 用户创建 | (Dialog) | 增强 `features/rgw/user/pages/user-list.tsx` |
 | RGW 桶创建 | (Dialog) | 增强 `features/rgw/bucket/pages/bucket-list.tsx` |
 
-### 1.4 集成测试
+### 1.6 集成测试
 
 新增 21 个测试文件，覆盖所有 API hooks 和核心服务：
 
