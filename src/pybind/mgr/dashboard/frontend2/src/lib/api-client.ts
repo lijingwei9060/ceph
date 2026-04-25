@@ -43,11 +43,13 @@ export function cephAcceptHeader(major: number, minor: number): string {
 }
 
 // APIRouter endpoints: /api/...
-// Default Accept: application/json (no version constraint for unversioned endpoints)
+// All RESTController endpoints require a versioned Accept header.
+// Default version is v1.0 (APIVersion.DEFAULT). Without this, the backend
+// returns 415 because it cannot parse the version from plain application/json.
 export const apiClient: KyInstance = ky.create({
   prefixUrl: '/api',
   headers: {
-    Accept: 'application/json',
+    Accept: 'application/vnd.ceph.api.v1.0+json',
   },
   hooks: {
     beforeRequest: createAuthHook(),
