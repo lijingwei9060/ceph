@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ColumnDef } from '@tanstack/react-table';
-import { FolderOpen, RefreshCw, Trash2, Plus, AlertCircle } from 'lucide-react';
-import { useNfsStatus, useNfsExports, useDeleteNfsExport } from '../api/use-nfs';
+import { FolderOpen, RefreshCw, Trash2, Plus, AlertCircle, Pencil, Eye } from 'lucide-react';
+import { useNfsStatus, useNfsExports, useDeleteNfsExport, type NfsExport } from '../api/use-nfs';
 import { DataTable } from '@/components/ui/data-table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +11,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -22,6 +23,7 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { NfsExportForm } from '../components/nfs-export-form';
+import { NfsExportDetailDialog } from '../components/nfs-export-detail';
 
 export function NfsListPage() {
   const { t } = useTranslation();
@@ -30,6 +32,8 @@ export function NfsListPage() {
   const deleteExport = useDeleteNfsExport();
   const [deleteConfirm, setDeleteConfirm] = useState<{ clusterId: string; exportId: number } | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [editExport, setEditExport] = useState<NfsExport | null>(null);
+  const [detailExport, setDetailExport] = useState<NfsExport | null>(null);
 
   const handleDelete = async () => {
     if (!deleteConfirm) return;
@@ -92,6 +96,15 @@ export function NfsListPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setDetailExport(row.original)}>
+              <Eye className="mr-2 h-4 w-4" />
+              View Details
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setEditExport(row.original)}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive"
               onClick={() => setDeleteConfirm({
@@ -184,6 +197,23 @@ export function NfsListPage() {
           <NfsExportForm onSuccess={() => setShowCreate(false)} />
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!editExport} onOpenChange={() => setEditExport(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit NFS Export #{editExport?.export_id}</DialogTitle>
+          </DialogHeader>
+          {editExport && (
+            <NfsExportForm initialData={editExport} onSuccess={() => setEditExport(null)} />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <NfsExportDetailDialog
+        exportData={detailExport}
+        open={detailExport !== null}
+        onClose={() => setDetailExport(null)}
+      />
     </div>
   );
 }

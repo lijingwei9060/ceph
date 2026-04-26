@@ -2,11 +2,23 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Files, RefreshCw } from 'lucide-react';
-import { useCephFsList } from '../api/use-cephfs';
+import { useCephFsList, useCephFsDetail } from '../api/use-cephfs';
 import { DataTable } from '@/components/ui/data-table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CephFsDetailDialog } from '../components/cephfs-detail';
+
+function FsMdsBadge({ fsId }: { fsId: number }) {
+  const { data } = useCephFsDetail(fsId);
+  if (!data) return <span className="text-muted-foreground">-</span>;
+  const activeCount = data.cephfs.ranks?.filter((r) => r.state === 'up:active').length ?? 0;
+  const totalCount = data.cephfs.ranks?.length ?? 0;
+  return (
+    <Badge variant={activeCount > 0 ? 'default' : 'secondary'}>
+      {activeCount}/{totalCount} active
+    </Badge>
+  );
+}
 
 export function CephFsListPage() {
   const { t } = useTranslation();
@@ -30,6 +42,11 @@ export function CephFsListPage() {
           {row.original.name}
         </button>
       ),
+    },
+    {
+      id: 'mds_rank',
+      header: 'MDS Ranks',
+      cell: ({ row }) => <FsMdsBadge fsId={row.original.id} />,
     },
     {
       accessorKey: 'metadata_pool_name',

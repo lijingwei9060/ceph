@@ -29,6 +29,21 @@ export interface NfsStatus {
   message?: string;
 }
 
+export interface NfsCluster {
+  cluster_id: string;
+  running: number;
+  total: number;
+}
+
+export interface NfsFsal {
+  name: string;
+  available: boolean;
+}
+
+export interface NfsFilesystem {
+  name: string;
+}
+
 export function useNfsStatus() {
   return useQuery<NfsStatus>({
     queryKey: ['nfs', 'status'],
@@ -92,5 +107,40 @@ export function useDeleteNfsExport() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['nfs'] });
     },
+  });
+}
+
+// --- Cluster / FSAL / Filesystem helpers ---
+
+export function useNfsClusters() {
+  return useQuery<NfsCluster[]>({
+    queryKey: ['nfs', 'clusters'],
+    queryFn: async () => apiClient.get('nfs-ganesha/cluster', {
+      headers: { Accept: cephAcceptHeader(0, 1) },
+    }).json<NfsCluster[]>(),
+  });
+}
+
+export function useNfsFsals() {
+  return useQuery<NfsFsal[]>({
+    queryKey: ['nfs', 'fsals'],
+    queryFn: async () => uiApiClient.get('nfs-ganesha/fsals').json<NfsFsal[]>(),
+  });
+}
+
+export function useNfsFilesystems() {
+  return useQuery<NfsFilesystem[]>({
+    queryKey: ['nfs', 'filesystems'],
+    queryFn: async () => uiApiClient.get('nfs-ganesha/cephfs/filesystems').json<NfsFilesystem[]>(),
+  });
+}
+
+export function useNfsLsDir(fsName: string | null, rootDir: string = '/') {
+  return useQuery<string[]>({
+    queryKey: ['nfs', 'lsdir', fsName, rootDir],
+    queryFn: async () => uiApiClient.get(`nfs-ganesha/lsdir/${fsName}`, {
+      searchParams: { root_dir: rootDir },
+    }).json<string[]>(),
+    enabled: !!fsName,
   });
 }

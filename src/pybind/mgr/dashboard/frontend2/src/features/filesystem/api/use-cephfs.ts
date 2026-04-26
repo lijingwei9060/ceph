@@ -95,3 +95,139 @@ export function useEvictCephFsClient() {
     },
   });
 }
+
+// --- Directory browsing ---
+
+export interface CephFsDirEntry {
+  name: string;
+  path: string;
+  is_dir?: boolean;
+  quotas?: CephFsQuotas;
+  snapshots?: CephFsSnapshot[];
+}
+
+export interface CephFsQuotas {
+  max_bytes?: number;
+  max_files?: number;
+}
+
+export interface CephFsSnapshot {
+  name: string;
+  path: string;
+  created?: string;
+}
+
+export function useCephFsRootDir(fsId: number | null) {
+  return useQuery<CephFsDirEntry>({
+    queryKey: ['cephfs', fsId, 'root-dir'],
+    queryFn: async () => apiClient.get(`cephfs/${fsId}/get_root_directory`).json<CephFsDirEntry>(),
+    enabled: fsId !== null,
+  });
+}
+
+export function useCephFsLsDir(fsId: number | null, path: string | null) {
+  return useQuery<CephFsDirEntry[]>({
+    queryKey: ['cephfs', fsId, 'lsdir', path],
+    queryFn: async () => apiClient.get(`cephfs/${fsId}/ls_dir`, {
+      searchParams: { depth: '2', path: path! },
+    }).json<CephFsDirEntry[]>(),
+    enabled: fsId !== null && path !== null,
+  });
+}
+
+// --- MDS Counters ---
+
+export function useCephFsMdsCounters(fsId: number | null) {
+  return useQuery<Record<string, unknown>>({
+    queryKey: ['cephfs', fsId, 'mds-counters'],
+    queryFn: async () => apiClient.get(`cephfs/${fsId}/mds_counters`).json(),
+    enabled: fsId !== null,
+  });
+}
+
+// --- Quota ---
+
+export function useCephFsQuota(fsId: number | null, path: string | null) {
+  return useQuery<CephFsQuotas>({
+    queryKey: ['cephfs', fsId, 'quota', path],
+    queryFn: async () => apiClient.get(`cephfs/${fsId}/quota`, {
+      searchParams: { path: path! },
+    }).json<CephFsQuotas>(),
+    enabled: fsId !== null && path !== null,
+  });
+}
+
+export function useSetCephFsQuota() {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, { fsId: number; path: string; maxBytes?: number; maxFiles?: number }>({
+    mutationFn: async ({ fsId, path, maxBytes, maxFiles }) => {
+      await apiClient.put(`cephfs/${fsId}/quota`, {
+        searchParams: { path },
+        json: { max_bytes: maxBytes ?? 0, max_files: maxFiles ?? 0 },
+      });
+    },
+    onSuccess: (_, { fsId, path }) => {
+      queryClient.invalidateQueries({ queryKey: ['cephfs', fsId, 'quota', path] });
+    },
+  });
+}
+
+// --- Snapshots ---
+
+export function useCreateCephFsSnapshot() {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, { fsId: number; path: string; name: string }>({
+    mutationFn: async ({ fsId, path, name }) => {
+      await apiClient.post(`cephfs/${fsId}/snapshot`, {
+        searchParams: { path, name },
+      });
+    },
+    onSuccess: (_, { fsId }) => {
+      queryClient.invalidateQueries({ queryKey: ['cephfs', fsId, 'lsdir'] });
+    },
+  });
+}
+
+export function useDeleteCephFsSnapshot() {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, { fsId: number; path: string; name: string }>({
+    mutationFn: async ({ fsId, path, name }) => {
+      await apiClient.delete(`cephfs/${fsId}/snapshot`, {
+        searchParams: { path, name },
+      });
+    },
+    onSuccess: (_, { fsId }) => {
+      queryClient.invalidateQueries({ queryKey: ['cephfs', fsId, 'lsdir'] });
+    },
+  });
+}
+
+// --- Tree (mkdir / rmdir) ---
+
+export function useMkCephFsTree() {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, { fsId: number; path: string }>({
+    mutationFn: async ({ fsId, path }) => {
+      await apiClient.post(`cephfs/${fsId}/tree`, {
+        json: { path },
+      });
+    },
+    onSuccess: (_, { fsId }) => {
+      queryClient.invalidateQueries({ queryKey: ['cephfs', fsId, 'lsdir'] });
+    },
+  });
+}
+
+export function useRmCephFsTree() {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, { fsId: number; path: string }>({
+    mutationFn: async ({ fsId, path }) => {
+      await apiClient.delete(`cephfs/${fsId}/tree`, {
+        json: { path },
+      });
+    },
+    onSuccess: (_, { fsId }) => {
+      queryClient.invalidateQueries({ queryKey: ['cephfs', fsId, 'lsdir'] });
+    },
+  });
+}

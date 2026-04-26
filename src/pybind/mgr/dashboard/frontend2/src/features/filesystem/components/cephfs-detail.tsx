@@ -1,4 +1,9 @@
-import { useCephFsTabs } from '../api/use-cephfs';
+import { useState } from 'react';
+import {
+  useCephFsTabs,
+  useCephFsRootDir,
+  type CephFsDirEntry,
+} from '../api/use-cephfs';
 import {
   Dialog,
   DialogContent,
@@ -7,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CephFsDirectoryTree, CephFsDirectoryPanel } from './cephfs-directory-tree';
 
 function MdsStateBadge({ state }: { state: string }) {
   if (state === 'up:active' || state === 'up:replay') return <Badge variant="default">{state}</Badge>;
@@ -24,10 +30,12 @@ export function CephFsDetailDialog({
   onClose: () => void;
 }) {
   const { data, isLoading } = useCephFsTabs(fsId);
+  const { data: rootDir } = useCephFsRootDir(open ? fsId : null);
+  const [selectedEntry, setSelectedEntry] = useState<CephFsDirEntry | null>(null);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>File System: {data?.name ?? `#${fsId}`}</DialogTitle>
         </DialogHeader>
@@ -36,11 +44,12 @@ export function CephFsDetailDialog({
           <p className="text-muted-foreground text-center py-8">Loading...</p>
         ) : data ? (
           <Tabs defaultValue="ranks">
-            <TabsList>
+            <TabsList className="flex-wrap">
               <TabsTrigger value="ranks">MDS Ranks ({data.ranks?.length ?? 0})</TabsTrigger>
               <TabsTrigger value="standbys">Standbys ({data.standbys?.length ?? 0})</TabsTrigger>
               <TabsTrigger value="pools">Pools ({data.pools?.length ?? 0})</TabsTrigger>
               <TabsTrigger value="clients">Clients ({data.clients?.length ?? 0})</TabsTrigger>
+              {rootDir && <TabsTrigger value="directories">Directories</TabsTrigger>}
             </TabsList>
 
             <TabsContent value="ranks" className="space-y-2 mt-4">
@@ -107,6 +116,27 @@ export function CephFsDetailDialog({
                 <p className="text-muted-foreground text-center py-4">No connected clients</p>
               )}
             </TabsContent>
+
+            {rootDir && (
+              <TabsContent value="directories" className="mt-4">
+                <div className="flex gap-4 min-h-[300px]">
+                  <div className="w-1/2 border rounded p-2 overflow-auto max-h-[400px]">
+                    <CephFsDirectoryTree
+                      fsId={fsId!}
+                      rootDir={rootDir}
+                      onSelect={setSelectedEntry}
+                      selectedPath={selectedEntry?.path ?? null}
+                    />
+                  </div>
+                  <div className="w-1/2 border rounded p-3 overflow-auto max-h-[400px]">
+                    <CephFsDirectoryPanel
+                      fsId={fsId!}
+                      selectedEntry={selectedEntry}
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+            )}
           </Tabs>
         ) : null}
       </DialogContent>
