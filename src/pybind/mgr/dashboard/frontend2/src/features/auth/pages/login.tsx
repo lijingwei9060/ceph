@@ -94,7 +94,12 @@ export function LoginPage() {
     }
 
     // Load custom banner
-    uiApiClient.get('login/custom_banner').text().then(setBanner).catch(() => {});
+    uiApiClient.get('login/custom_banner').text().then((text) => {
+      // Filter out "null" string (API returns null when not configured)
+      if (text && text !== 'null') {
+        setBanner(text);
+      }
+    }).catch(() => {});
   }, [navigate, setAuth]);
 
   const onSubmit = async (data: LoginForm) => {
