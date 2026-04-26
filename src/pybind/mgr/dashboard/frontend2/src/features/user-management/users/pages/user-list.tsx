@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Users, RefreshCw, Trash2, Plus, Pencil } from 'lucide-react';
 import { useDashboardUsers, useDeleteDashboardUser, useUpdateDashboardUser, type DashboardUser } from '../api/use-dashboard-user';
@@ -29,7 +28,6 @@ function formatDate(ts: number) {
 }
 
 export function UserListPage() {
-  const { t } = useTranslation();
   const { data: users = [], isLoading, refetch } = useDashboardUsers();
   const deleteMutation = useDeleteDashboardUser();
   const updateMutation = useUpdateDashboardUser();

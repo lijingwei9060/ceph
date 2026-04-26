@@ -1,4 +1,3 @@
-import { useTranslation } from 'react-i18next';
 import { Activity, ExternalLink, AlertTriangle, VolumeX } from 'lucide-react';
 import { useGrafanaUrl, usePrometheusAlerts, usePrometheusSilences } from '../api/use-monitoring';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +12,6 @@ function AlertStateBadge({ state }: { state: string }) {
 }
 
 export function MonitoringPage() {
-  const { t } = useTranslation();
   const { data: grafanaUrl } = useGrafanaUrl();
   const { data: alertGroups = [], isLoading: alertsLoading } = usePrometheusAlerts();
   const { data: silences = [], isLoading: silencesLoading } = usePrometheusSilences();

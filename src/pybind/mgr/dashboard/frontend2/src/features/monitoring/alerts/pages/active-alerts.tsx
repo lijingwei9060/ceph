@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { ExternalLink, AlertTriangle, RefreshCw, Plus } from 'lucide-react';
+import { ExternalLink, AlertTriangle, RefreshCw } from 'lucide-react';
 import { useAlertmanagerAlerts } from '../../api/use-prometheus';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';

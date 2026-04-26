@@ -71,57 +71,6 @@ function HealthBadge({ health }: { health: string }) {
   return <Badge className={colorClass}>{health}</Badge>;
 }
 
-function RuleDetails({ rule }: { rule: PrometheusRule }) {
-  return (
-    <div className="space-y-2 text-sm">
-      <div>
-        <span className="font-medium text-muted-foreground">表达式:</span>
-        <code className="ml-2 bg-muted px-1 py-0.5 rounded text-xs">{rule.query}</code>
-      </div>
-
-      {rule.duration > 0 && (
-        <div>
-          <span className="font-medium text-muted-foreground">持续时间:</span>
-          <span className="ml-2">{formatDuration(rule.duration)}</span>
-        </div>
-      )}
-
-      {Object.keys(rule.labels).length > 0 && (
-        <div>
-          <span className="font-medium text-muted-foreground">标签:</span>
-          <div className="flex flex-wrap gap-1 mt-1">
-            {Object.entries(rule.labels).map(([key, value]) => (
-              <Badge key={key} variant="outline" className="text-xs">
-                {key}={value}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {rule.annotations.summary && (
-        <div>
-          <span className="font-medium text-muted-foreground">摘要:</span>
-          <span className="ml-2">{rule.annotations.summary}</span>
-        </div>
-      )}
-
-      {rule.annotations.description && (
-        <div>
-          <span className="font-medium text-muted-foreground">描述:</span>
-          <span className="ml-2 text-muted-foreground">{rule.annotations.description}</span>
-        </div>
-      )}
-
-      {rule.alerts && rule.alerts.length > 0 && (
-        <div>
-          <span className="font-medium text-muted-foreground">活跃告警:</span>
-          <span className="ml-2">{rule.alerts.length}</span>
-        </div>
-      )}
-    </div>
-  );
-}
 
 function RuleGroupCard({ group }: { group: PrometheusRuleGroup }) {
   const [expanded, setExpanded] = useState(false);

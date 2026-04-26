@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Shield, RefreshCw, Trash2, Plus, Pencil, Copy } from 'lucide-react';
-import { useRoles, useDeleteRole, useCloneRole, type Role } from '../api/use-role';
+import { useRoles, useDeleteRole, type Role } from '../api/use-role';
 import { DataTable } from '@/components/ui/data-table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,7 +19,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { RoleForm } from '../components/role-form';
 
@@ -30,10 +28,8 @@ function ScopeCount({ role }: { role: Role }) {
 }
 
 export function RoleListPage() {
-  const { t } = useTranslation();
   const { data: roles = [], isLoading, refetch } = useRoles();
   const deleteMutation = useDeleteRole();
-  const cloneMutation = useCloneRole();
   const [deleteConfirm, setDeleteConfirm] = useState<Role | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [editRole, setEditRole] = useState<Role | null>(null);

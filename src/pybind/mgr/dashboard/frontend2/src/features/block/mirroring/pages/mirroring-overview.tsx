@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { Button } from '@/components/ui/button';
-import { useTranslation } from 'react-i18next';
 
 const HEALTH_MAP: Record<number, { label: string; variant: 'default' | 'secondary' | 'destructive' }> = {
   0: { label: 'OK', variant: 'default' },
@@ -26,7 +25,6 @@ interface PoolRow {
 }
 
 export function MirroringOverviewPage() {
-  const { t } = useTranslation();
   const { data: summary, isLoading, refetch } = useMirroringSummary();
 
   const pools: PoolRow[] = (summary?.content_data?.pools ?? []).map((p) => ({

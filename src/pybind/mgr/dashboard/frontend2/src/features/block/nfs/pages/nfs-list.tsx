@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { type ColumnDef } from '@tanstack/react-table';
 import { FolderOpen, RefreshCw, Trash2, Plus, AlertCircle, Pencil, Eye } from 'lucide-react';
 import { useNfsStatus, useNfsExports, useDeleteNfsExport, type NfsExport } from '../api/use-nfs';
@@ -26,7 +25,6 @@ import { NfsExportForm } from '../components/nfs-export-form';
 import { NfsExportDetailDialog } from '../components/nfs-export-detail';
 
 export function NfsListPage() {
-  const { t } = useTranslation();
   const { data: status } = useNfsStatus();
   const { data: exports = [], isLoading, refetch } = useNfsExports();
   const deleteExport = useDeleteNfsExport();

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Server, Trash2, MoreHorizontal, AlertCircle, RefreshCw } from 'lucide-react';
-import { useIscsiStatus, useIscsiOverview, useIscsiTargets, useDeleteIscsiTarget } from '../api/use-iscsi';
+import { useIscsiStatus, useIscsiTargets, useDeleteIscsiTarget } from '../api/use-iscsi';
 import { DataTable } from '@/components/ui/data-table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,12 +20,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-import { useTranslation } from 'react-i18next';
 
 export function IscsiOverviewPage() {
-  const { t } = useTranslation();
   const { data: status } = useIscsiStatus();
-  const { data: overview } = useIscsiOverview();
   const { data: targets = [], isLoading: targetsLoading, refetch } = useIscsiTargets();
   const deleteTarget = useDeleteIscsiTarget();
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);

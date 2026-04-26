@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Users, RefreshCw, Trash2, Plus, Pencil, Eye, MoreHorizontal } from 'lucide-react';
 import { useRgwUsers, useDeleteRgwUser, type RgwUser } from '../api/use-rgw-user';
@@ -25,7 +24,6 @@ import { RgwUserForm } from '../components/rgw-user-form';
 import { RgwUserDetailDialog } from '../components/rgw-user-detail';
 
 export function RgwUserListPage() {
-  const { t } = useTranslation();
   const { data: users = [], isLoading, refetch } = useRgwUsers();
   const deleteUser = useDeleteRgwUser();
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);

@@ -4,12 +4,10 @@ import {
   useUpdatePool,
   usePoolInfo,
   type Pool,
-  type PoolInfo,
 } from '../api/use-pool';
 import {
   useErasureCodeProfiles,
   useCreateErasureCodeProfile,
-  type ErasureCodeProfile,
 } from '../api/use-ec-profile';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -554,12 +552,10 @@ function EcProfileCreateDialog({
   open,
   onClose,
   onCreated,
-  info,
 }: {
   open: boolean;
   onClose: () => void;
   onCreated: (name: string) => void;
-  info?: PoolInfo;
 }) {
   const createEcProfile = useCreateErasureCodeProfile();
   const [name, setName] = useState('');
@@ -568,14 +564,15 @@ function EcProfileCreateDialog({
   const [m, setM] = useState(2);
   const [technique, setTechnique] = useState('reed_sol_van');
 
-  useEffect(() => {
-    const defaults = PLUGIN_DEFAULTS[plugin];
+  const handlePluginChange = (newPlugin: string) => {
+    setPlugin(newPlugin);
+    const defaults = PLUGIN_DEFAULTS[newPlugin];
     if (defaults) {
       setK(defaults.k);
       setM(defaults.m);
       setTechnique(defaults.technique);
     }
-  }, [plugin]);
+  };
 
   const handleCreate = async () => {
     if (!name) return;
@@ -605,7 +602,7 @@ function EcProfileCreateDialog({
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Plugin</label>
-              <Select value={plugin} onValueChange={setPlugin}>
+              <Select value={plugin} onValueChange={handlePluginChange}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {['jerasure', 'lrc', 'isa', 'shec', 'clay'].map((p) => (

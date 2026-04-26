@@ -30,7 +30,6 @@ export function DashboardOverview() {
   const dfStats = healthFull?.df?.stats;
   const capacityTotal = dfStats?.total_bytes ?? 0;
   const capacityUsed = dfStats?.total_used_raw_bytes ?? 0;
-  const capacityAvail = dfStats?.total_avail_bytes ?? 0;
   const usagePercent = capacityTotal > 0 ? (capacityUsed / capacityTotal) * 100 : 0;
 
   // Client IOPS from health/full client_perf

@@ -91,7 +91,6 @@ describe('apiClient default Accept header', () => {
     // The apiClient MUST use 'application/vnd.ceph.api.v1.0+json' as default
     // because Ceph RESTController endpoints parse the version from Accept.
     // Plain 'application/json' causes 415 errors.
-    const defaultHeaders = (apiClient as unknown as { defaults: { headers: { Accept: string } } }).defaults?.headers;
     // We verify by checking that ky was created with the correct header
     // The actual verification is that login/auth calls work without 415
     expect(true).toBe(true); // Header is set at creation time in api-client.ts

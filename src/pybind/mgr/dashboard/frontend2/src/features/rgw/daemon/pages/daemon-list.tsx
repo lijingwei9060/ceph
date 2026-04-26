@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Cloud, RefreshCw } from 'lucide-react';
 import { useRgwDaemons } from '../api/use-rgw-daemon';
@@ -9,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { RgwDaemonDetailDialog } from '../components/rgw-daemon-detail';
 
 export function RgwDaemonListPage() {
-  const { t } = useTranslation();
   const { data: daemons = [], isLoading, refetch } = useRgwDaemons();
   const [detailSvcId, setDetailSvcId] = useState<string | null>(null);
 

@@ -2,7 +2,6 @@ import { createHashRouter, Navigate } from 'react-router';
 import { lazy, Suspense } from 'react';
 import { WorkbenchLayout } from '@/components/layouts/workbench-layout';
 import { LoginLayout } from '@/components/layouts/login-layout';
-import { PageWrapper } from './page-wrapper';
 import { PlaceholderPage } from './placeholder-page';
 import { AuthGuard, ChangePasswordGuard } from './auth-guard';
 

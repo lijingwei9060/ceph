@@ -1,4 +1,4 @@
-import { useRgwBucket, type RgwBucketDetail } from '../api/use-rgw-bucket';
+import { useRgwBucket } from '../api/use-rgw-bucket';
 import {
   Dialog,
   DialogContent,

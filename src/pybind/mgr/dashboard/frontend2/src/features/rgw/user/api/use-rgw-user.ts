@@ -65,7 +65,7 @@ export function useRgwUser(uid: string | null) {
 
 // Fetch all user details by listing IDs then fetching each
 export function useRgwUsers() {
-  const { data: userIds, isLoading: idsLoading } = useRgwUserIds();
+  const { data: userIds } = useRgwUserIds();
 
   return useQuery<RgwUser[]>({
     queryKey: ['rgw', 'users', 'all', userIds],

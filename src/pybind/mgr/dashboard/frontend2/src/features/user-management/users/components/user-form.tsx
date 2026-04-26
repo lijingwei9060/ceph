@@ -22,13 +22,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { toast } from 'sonner';
 
 const userFormSchema = z.object({
@@ -106,6 +99,7 @@ export function UserForm({ initialData, onSuccess }: UserFormProps) {
 
   const onSubmit = async (values: UserFormValues) => {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { confirm_password, ...data } = values;
       if (isEdit) {
         const updateData: Record<string, unknown> = { username: data.username };

@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Database, RefreshCw, Trash2, Plus, Pencil, Eye } from 'lucide-react';
+import { Database, RefreshCw, Trash2, Plus, Pencil } from 'lucide-react';
 import { usePools, useDeletePool, type Pool } from '../api/use-pool';
 import { DataTable } from '@/components/ui/data-table';
 import { Button } from '@/components/ui/button';
@@ -76,7 +75,6 @@ function UsageBar({ pool }: { pool: Pool }) {
 }
 
 export function PoolListPage() {
-  const { t } = useTranslation();
   const { data: pools = [], isLoading, refetch } = usePools(true);
   const { data: ecProfiles } = useEcProfiles();
   const deletePool = useDeletePool();

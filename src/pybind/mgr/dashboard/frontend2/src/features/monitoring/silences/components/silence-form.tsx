@@ -5,7 +5,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowLeft, Plus, Trash2, Loader2 } from 'lucide-react';
 import {
-  useSilence,
   useCreateSilence,
   useAlertmanagerAlerts,
   usePrometheusSilences,
@@ -17,7 +16,6 @@ import type {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
 import {
   Form,
   FormControl,

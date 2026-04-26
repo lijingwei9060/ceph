@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Files, RefreshCw } from 'lucide-react';
 import { useCephFsList, useCephFsDetail } from '../api/use-cephfs';
@@ -21,7 +20,6 @@ function FsMdsBadge({ fsId }: { fsId: number }) {
 }
 
 export function CephFsListPage() {
-  const { t } = useTranslation();
   const { data: filesystems = [], isLoading, refetch } = useCephFsList();
   const [detailFsId, setDetailFsId] = useState<number | null>(null);
 

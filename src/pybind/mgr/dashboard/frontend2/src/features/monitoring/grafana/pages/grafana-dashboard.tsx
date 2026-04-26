@@ -1,6 +1,6 @@
 import { ExternalLink, BarChart3 } from 'lucide-react';
 import { useGrafanaUrl } from '../../api/use-prometheus';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
 

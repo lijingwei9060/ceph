@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { ChevronRight, ChevronDown, Folder, RefreshCw } from 'lucide-react';
+import { ChevronRight, ChevronDown, Folder } from 'lucide-react';
 import { useCephFsLsDir, type CephFsDirEntry } from '../api/use-cephfs';
-import { Button } from '@/components/ui/button';
 import { CephFsQuotaEditor } from './cephfs-quota-table';
 import { CephFsSnapshotTable } from './cephfs-snapshot-table';
 

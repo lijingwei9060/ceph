@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Archive, RefreshCw, Trash2, Plus, Eye, MoreHorizontal } from 'lucide-react';
 import { useRgwBuckets, useDeleteRgwBucket, useCreateRgwBucket } from '../api/use-rgw-bucket';
@@ -44,7 +43,6 @@ const bucketCreateSchema = z.object({
 type BucketCreateData = z.infer<typeof bucketCreateSchema>;
 
 export function RgwBucketListPage() {
-  const { t } = useTranslation();
   const { data: buckets = [], isLoading, refetch } = useRgwBuckets(true);
   const { data: userIds } = useRgwUserIds();
   const deleteBucket = useDeleteRgwBucket();

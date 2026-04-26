@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { type ColumnDef } from '@tanstack/react-table';
-import { HardDrive, RefreshCw, ChevronDown, ChevronRight } from 'lucide-react';
-import { useHostInventories, type HostInventory, type InventoryDevice } from '../api/use-inventory';
+import { HardDrive, RefreshCw } from 'lucide-react';
+import { useHostInventories, type InventoryDevice } from '../api/use-inventory';
 import { DataTable } from '@/components/ui/data-table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,7 +28,6 @@ function formatSize(bytes?: number): string {
 }
 
 export function InventoryListPage() {
-  const { t } = useTranslation();
   const { data: inventories = [], isLoading, refetch } = useHostInventories();
   const [hostFilter, setHostFilter] = useState<string>('all');
 

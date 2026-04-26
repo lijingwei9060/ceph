@@ -7,7 +7,7 @@ import {
   useUpdateRole,
   type Role,
 } from '../api/use-role';
-import { SCOPE_SERVER_KEY, type PermissionScope } from '@/types/permissions';
+import { SCOPE_SERVER_KEY } from '@/types/permissions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
