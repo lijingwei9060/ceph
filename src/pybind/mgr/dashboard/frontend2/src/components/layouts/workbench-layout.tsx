@@ -59,10 +59,10 @@ export function WorkbenchLayout() {
         <div key={item.key} className={cn(depth > 0 && 'pl-4')}>
           <SidebarMenuButton
             className="w-full"
-            tooltip={t(`nav.${item.key}`, item.label)}
+            tooltip={t(item.labelKey)}
           >
             <NavIcon name={item.icon} />
-            <span>{item.label}</span>
+            <span>{t(item.labelKey)}</span>
           </SidebarMenuButton>
           <div className="ml-4">
             {item.children.map((child) => renderNavItem(child, depth + 1))}
@@ -76,10 +76,10 @@ export function WorkbenchLayout() {
           isActive={location.pathname === item.path}
           onClick={() => item.path && navigate(item.path)}
           className={cn(depth > 0 && 'pl-4')}
-          tooltip={t(`nav.${item.key}`, item.label)}
+          tooltip={t(item.labelKey)}
         >
           <NavIcon name={item.icon} />
-          <span>{item.label}</span>
+          <span>{t(item.labelKey)}</span>
         </SidebarMenuButton>
       </SidebarMenuItem>
     );

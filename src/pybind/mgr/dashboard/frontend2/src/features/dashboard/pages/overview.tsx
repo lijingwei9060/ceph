@@ -1,17 +1,72 @@
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useSummary } from '@/features/health/api/use-health';
 import { useHealthFull } from '@/features/health/api/use-health';
+import { useFeatureToggles } from '@/features/health/api/use-health';
 import { getHealthColor, getHealthLabel } from '@/lib/health';
 import { formatDimlessBinary, formatDimless } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+
+interface InfoCardProps {
+  title: string;
+  children: React.ReactNode;
+  linkTo?: string;
+  className?: string;
+}
+
+function InfoCard({ title, children, linkTo, className }: InfoCardProps) {
+  const navigate = useNavigate();
+
+  return (
+    <Card
+      className={cn('min-w-[180px]', className)}
+      onClick={() => linkTo && navigate(linkTo)}
+      role={linkTo ? 'button' : undefined}
+      tabIndex={linkTo ? 0 : undefined}
+      onKeyDown={(e) => {
+        if (linkTo && (e.key === 'Enter' || e.key === ' ')) {
+          navigate(linkTo);
+        }
+      }}
+      style={linkTo ? { cursor: 'pointer' } : undefined}
+    >
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground">
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="text-sm">
+        {children}
+      </CardContent>
+    </Card>
+  );
+}
+
+interface InfoGroupProps {
+  title: string;
+  children: React.ReactNode;
+}
+
+function InfoGroup({ title, children }: InfoGroupProps) {
+  return (
+    <div className="space-y-3">
+      <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        {title}
+      </h3>
+      <div className="flex flex-wrap gap-3">
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export function DashboardOverview() {
   const { t } = useTranslation();
   const { data: summary, isLoading: summaryLoading } = useSummary();
   const { data: healthFull, isLoading: healthLoading } = useHealthFull();
+  const { data: featureToggles } = useFeatureToggles();
 
   if (summaryLoading || healthLoading || !summary) {
     return (
@@ -26,57 +81,69 @@ export function DashboardOverview() {
   const healthLabel = getHealthLabel(healthStatus);
   const version = summary.version;
 
-  // Capacity from health/full df
-  const dfStats = healthFull?.df?.stats;
-  const capacityTotal = dfStats?.total_bytes ?? 0;
-  const capacityUsed = dfStats?.total_used_raw_bytes ?? 0;
-  const usagePercent = capacityTotal > 0 ? (capacityUsed / capacityTotal) * 100 : 0;
+  // Hosts
+  const hostsCount = healthFull?.hosts;
 
-  // Client IOPS from health/full client_perf
-  const clientPerf = healthFull?.client_perf;
-  const readOps = clientPerf?.read_op_per_sec ?? 0;
-  const writeOps = clientPerf?.write_op_per_sec ?? 0;
-  const totalIOPS = readOps + writeOps;
+  // Monitors
+  const monStatus = healthFull?.mon_status;
+  const totalMons = monStatus?.monmap?.mons?.length ?? 0;
+  const inQuorum = monStatus?.quorum?.length ?? 0;
 
-  // PG status from health/full pg_info
-  const pgStatuses = healthFull?.pg_info?.statuses ?? {};
-  const pgData = Object.entries(pgStatuses).map(([name, value]) => {
-    const cleanName = name.replace(/\s*\(.*\)/, '').trim();
-    let color = '#9ca3af';
-    if (cleanName === 'clean' || cleanName === 'active+clean') color = '#22c55e';
-    else if (cleanName.includes('degraded') || cleanName.includes('recovering')) color = '#eab308';
-    else if (cleanName.includes('error') || cleanName.includes('down')) color = '#ef4444';
-    else if (cleanName.includes('working') || cleanName.includes('scrub')) color = '#3b82f6';
-    return { name: cleanName, value: value as number, color };
-  });
-  if (pgData.length === 0) {
-    pgData.push({ name: 'No data', value: 1, color: '#9ca3af' });
-  }
+  // Managers
+  const mgrMap = healthFull?.mgr_map;
+  const activeMgr = mgrMap?.active_name ?? '-';
+  const standbyMgrs = mgrMap?.standbys?.length ?? 0;
 
-  // Object stats from pg_info
-  const objectStats = healthFull?.pg_info?.object_stats;
-  const objHealthy = (objectStats?.num_objects ?? 0) - (objectStats?.num_objects_degraded ?? 0) - (objectStats?.num_objects_misplaced ?? 0);
-  const objectData = [
-    { name: 'Healthy', value: Math.max(objHealthy, 0), color: '#22c55e' },
-    { name: 'Misplaced', value: objectStats?.num_objects_misplaced ?? 0, color: '#eab308' },
-    { name: 'Degraded', value: objectStats?.num_objects_degraded ?? 0, color: '#ef4444' },
-  ];
-
-  // OSD summary
+  // OSDs
   const osds = healthFull?.osd_map?.osds ?? [];
   const osdUp = osds.filter((o) => o.up === 1).length;
   const osdIn = osds.filter((o) => o.in === 1).length;
   const osdTotal = osds.length;
 
-  // Mon quorum
-  const inQuorum = healthFull?.mon_status?.quorum?.length ?? 0;
-  const totalMons = healthFull?.mon_status?.monmap?.mons?.length ?? 0;
+  // RGW
+  const rgwCount = healthFull?.rgw;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const pieTooltipFormatter = (value: any, name: any) => [formatDimless(Number(value) || 0), String(name)];
+  // MDS (Metadata Servers)
+  const fsMap = healthFull?.fs_map as { filesystems?: Array<{ up?: number; total?: number; name?: string }> } | undefined;
+  const mdsUp = fsMap?.filesystems?.reduce((sum, fs) => sum + (fs.up ?? 0), 0) ?? 0;
+  const mdsTotal = fsMap?.filesystems?.reduce((sum, fs) => sum + (fs.total ?? 0), 0) ?? 0;
+
+  // iSCSI
+  const iscsiDaemons = healthFull?.iscsi_daemons;
+  const iscsiUp = iscsiDaemons?.up ?? 0;
+  const iscsiDown = iscsiDaemons?.down ?? 0;
+  const iscsiTotal = iscsiUp + iscsiDown;
+
+  // Capacity
+  const dfStats = healthFull?.df?.stats;
+  const capacityTotal = dfStats?.total_bytes ?? 0;
+
+  // Objects
+  const objectStats = healthFull?.pg_info?.object_stats;
+  const totalObjects = objectStats?.num_objects ?? 0;
+
+  // PG Status
+  const pgStatuses = healthFull?.pg_info?.statuses ?? {};
+  const totalPGs = Object.values(pgStatuses).reduce((sum, count) => sum + (count as number), 0);
+
+  // Pools
+  const poolsCount = healthFull?.pools?.length ?? 0;
+
+  // Determine if we should show each section based on data availability
+  const showStatusSection =
+    healthStatus ||
+    hostsCount != null ||
+    monStatus ||
+    osdTotal > 0 ||
+    mgrMap ||
+    (rgwCount != null && featureToggles?.rgw) ||
+    (mdsTotal > 0 && featureToggles?.cephfs) ||
+    (iscsiTotal > 0 && featureToggles?.iscsi);
+
+  const showCapacitySection = capacityTotal > 0 || totalObjects > 0 || totalPGs > 0 || poolsCount > 0;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">{t('nav.dashboard')}</h1>
@@ -84,142 +151,114 @@ export function DashboardOverview() {
             <p className="text-sm text-muted-foreground">{version}</p>
           )}
         </div>
-        <Badge className={cn('text-sm', healthColor)} variant="outline">
+        <Badge className={cn('text-sm px-3', healthColor)} variant="outline">
           {healthStatus?.replace('HEALTH_', '') || 'UNKNOWN'}
         </Badge>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">{t('dashboard.clusterStatus')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className={cn('text-3xl font-bold', healthColor)}>
-              {t(`dashboard.${healthLabel}`, healthLabel)}
-            </div>
-            <div className="mt-1 text-xs text-muted-foreground">
-              Monitors: {inQuorum}/{totalMons} in quorum
-            </div>
-          </CardContent>
-        </Card>
+      {/* Status Section */}
+      {showStatusSection && (
+        <InfoGroup title={t('dashboard.clusterStatus')}>
+          {/* Cluster Status */}
+          {healthStatus && (
+            <InfoCard title={t('dashboard.healthStatus')}>
+              <Badge variant="outline" className={cn('text-xs', healthColor)}>
+                {t(`dashboard.${healthLabel}`, healthLabel)}
+              </Badge>
+            </InfoCard>
+          )}
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">{t('dashboard.capacity')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-1">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{t('dashboard.used')}</span>
-                <span>{capacityUsed > 0 ? formatDimlessBinary(capacityUsed) : '-'}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{t('dashboard.total')}</span>
-                <span>{capacityTotal > 0 ? formatDimlessBinary(capacityTotal) : '-'}</span>
-              </div>
-              {capacityTotal > 0 && (
-                <div className="mt-2">
-                  <div className="h-2 w-full rounded-full bg-muted">
-                    <div
-                      className={cn(
-                        'h-2 rounded-full',
-                        usagePercent > 90 ? 'bg-red-500' : usagePercent > 70 ? 'bg-yellow-500' : 'bg-green-500'
-                      )}
-                      style={{ width: `${Math.min(usagePercent, 100)}%` }}
-                    />
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground text-right">
-                    {usagePercent.toFixed(1)}% used
-                  </p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+          {/* Hosts */}
+          {hostsCount != null && (
+            <InfoCard title={t('nav.hosts')} linkTo="/hosts">
+              {hostsCount} total
+            </InfoCard>
+          )}
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">{t('dashboard.clientIOPS')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {totalIOPS > 0 ? formatDimless(totalIOPS) + ' op/s' : '-'}
-            </div>
-            {clientPerf && (
-              <div className="mt-1 text-xs text-muted-foreground space-y-0.5">
-                <div>Read: {formatDimless(readOps)} op/s ({formatDimlessBinary(clientPerf.read_bytes_sec ?? 0)}/s)</div>
-                <div>Write: {formatDimless(writeOps)} op/s ({formatDimlessBinary(clientPerf.write_bytes_sec ?? 0)}/s)</div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          {/* Monitors */}
+          {monStatus && (
+            <InfoCard title={t('nav.monitors')} linkTo="/monitors">
+              {inQuorum}/{totalMons} {t('dashboard.healthy').toLowerCase()}
+            </InfoCard>
+          )}
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">OSDs</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{osdTotal}</div>
-            <div className="mt-1 text-xs text-muted-foreground space-y-0.5">
-              <div>Up: {osdUp}</div>
-              <div>In: {osdIn}</div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          {/* OSDs */}
+          {osdTotal > 0 && (
+            <InfoCard title={t('nav.osd')} linkTo="/osd">
+              {osdUp}/{osdTotal} up, {osdIn}/{osdTotal} in
+            </InfoCard>
+          )}
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">{t('dashboard.pgStatus')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie
-                  data={pgData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  dataKey="value"
-                  label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
-                >
-                  {pgData.map((entry, index) => (
-                    <Cell key={index} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={pieTooltipFormatter} />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+          {/* Managers */}
+          {mgrMap && (
+            <InfoCard title={t('dashboard.managers')}>
+              {activeMgr} {t('dashboard.active').toLowerCase()}
+              {standbyMgrs > 0 && `, ${standbyMgrs} ${t('common.inactive').toLowerCase()}`}
+            </InfoCard>
+          )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">{t('dashboard.objects')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie
-                  data={objectData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  dataKey="value"
-                  label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
-                >
-                  {objectData.map((entry, index) => (
-                    <Cell key={index} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={pieTooltipFormatter} />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
+          {/* Object Gateways */}
+          {rgwCount != null && featureToggles?.rgw && (
+            <InfoCard title={t('nav.objectGateways')} linkTo="/rgw/daemon">
+              {rgwCount} total
+            </InfoCard>
+          )}
+
+          {/* Metadata Servers */}
+          {mdsTotal > 0 && featureToggles?.cephfs && (
+            <InfoCard title={t('nav.metadataServers')}>
+              {mdsUp}/{mdsTotal} up
+            </InfoCard>
+          )}
+
+          {/* iSCSI Gateways */}
+          {iscsiTotal > 0 && featureToggles?.iscsi && (
+            <InfoCard title={t('nav.iscsiGateways')} linkTo="/block/iscsi">
+              {iscsiTotal} total
+              <br />
+              <span className="text-xs text-muted-foreground">
+                {iscsiUp} up,{' '}
+                <span className={iscsiDown > 0 ? 'text-destructive' : ''}>
+                  {iscsiDown} down
+                </span>
+              </span>
+            </InfoCard>
+          )}
+        </InfoGroup>
+      )}
+
+      {/* Capacity Section */}
+      {showCapacitySection && (
+        <InfoGroup title={t('dashboard.capacity')}>
+          {/* Raw Capacity */}
+          {capacityTotal > 0 && (
+            <InfoCard title={t('dashboard.rawCapacity')} linkTo="/pools">
+              {formatDimlessBinary(capacityTotal)}
+            </InfoCard>
+          )}
+
+          {/* Objects */}
+          {totalObjects > 0 && (
+            <InfoCard title={t('dashboard.objects')}>
+              {formatDimlessBinary(totalObjects)}
+            </InfoCard>
+          )}
+
+          {/* PGs */}
+          {totalPGs > 0 && (
+            <InfoCard title={t('dashboard.pgStatus')}>
+              {formatDimless(totalPGs)} PGs
+            </InfoCard>
+          )}
+
+          {/* Pools count */}
+          {poolsCount > 0 && (
+            <InfoCard title={t('nav.pools')} linkTo="/pools">
+              {poolsCount}
+            </InfoCard>
+          )}
+        </InfoGroup>
+      )}
     </div>
   );
 }
