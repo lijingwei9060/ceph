@@ -27,6 +27,8 @@ import { RgwUserListPage } from '@/features/rgw/user/pages/user-list';
 import { RgwBucketListPage } from '@/features/rgw/bucket/pages/bucket-list';
 import { MonitoringPage } from '@/features/monitoring/pages/monitoring-page';
 import { SettingsListPage } from '@/features/settings/pages/settings-list';
+import { UserListPage } from '@/features/user-management/users/pages/user-list';
+import { RoleListPage } from '@/features/user-management/roles/pages/role-list';
 
 export const router = createHashRouter([
   {
@@ -80,6 +82,9 @@ export const router = createHashRouter([
       { path: 'rgw/user', element: <RgwUserListPage /> },
       { path: 'rgw/bucket', element: <RgwBucketListPage /> },
       { path: 'settings', element: <SettingsListPage /> },
+      { path: 'user-management', element: <Navigate to="/user-management/users" replace /> },
+      { path: 'user-management/users', element: <UserListPage /> },
+      { path: 'user-management/roles', element: <RoleListPage /> },
     ],
   },
   { path: '*', element: <Navigate to="/dashboard" replace /> },

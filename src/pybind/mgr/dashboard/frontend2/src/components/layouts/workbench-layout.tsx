@@ -18,11 +18,11 @@ import { useNavigate, useLocation } from 'react-router';
 import { useAuth } from '@/hooks/use-auth';
 import {
   LayoutDashboard, Server, Database, HardDrive, FolderOpen,
-  Files, Cloud, LogOut, Bell,
+  Files, Cloud, Shield, LogOut, Bell,
 } from 'lucide-react';
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  LayoutDashboard, Server, Database, HardDrive, FolderOpen, Files, Cloud,
+  LayoutDashboard, Server, Database, HardDrive, FolderOpen, Files, Cloud, Shield,
 };
 
 function NavIcon({ name }: { name?: string }) {

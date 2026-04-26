@@ -88,6 +88,16 @@ export const NAV_CONFIG: NavItem[] = [
       { key: 'rgw-bucket', label: 'Buckets', path: '/rgw/bucket' },
     ],
   },
+  {
+    key: 'user-management',
+    label: 'User Management',
+    icon: 'Shield',
+    permission: 'user',
+    children: [
+      { key: 'dashboard-users', label: 'Users', path: '/user-management/users', permission: 'user' },
+      { key: 'dashboard-roles', label: 'Roles', path: '/user-management/roles', permission: 'user' },
+    ],
+  },
 ];
 
 export function isItemVisible(
