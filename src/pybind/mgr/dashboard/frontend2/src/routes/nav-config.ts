@@ -36,7 +36,6 @@ export const NAV_CONFIG: NavItem[] = [
       { key: 'crush-map', label: 'CRUSH Map', path: '/crush-map', permission: 'osd' },
       { key: 'mgr-modules', label: 'Manager Modules', path: '/mgr-modules', permission: 'configOpt' },
       { key: 'logs', label: 'Logs', path: '/logs', permission: 'log' },
-      { key: 'monitoring', label: 'Monitoring', path: '/monitoring', permission: 'prometheus' },
     ],
   },
   {
@@ -86,6 +85,18 @@ export const NAV_CONFIG: NavItem[] = [
       { key: 'rgw-daemon', label: 'Daemons', path: '/rgw/daemon' },
       { key: 'rgw-user', label: 'Users', path: '/rgw/user' },
       { key: 'rgw-bucket', label: 'Buckets', path: '/rgw/bucket' },
+    ],
+  },
+  {
+    key: 'monitoring',
+    label: 'Monitoring',
+    icon: 'Activity',
+    permission: 'prometheus',
+    children: [
+      { key: 'monitoring-alerts', label: 'Active Alerts', path: '/monitoring/alerts', permission: 'prometheus' },
+      { key: 'monitoring-rules', label: 'Alert Rules', path: '/monitoring/rules', permission: 'prometheus' },
+      { key: 'monitoring-silences', label: 'Silences', path: '/monitoring/silences', permission: 'prometheus' },
+      { key: 'monitoring-grafana', label: 'Grafana', path: '/monitoring/grafana', permission: 'grafana' },
     ],
   },
   {

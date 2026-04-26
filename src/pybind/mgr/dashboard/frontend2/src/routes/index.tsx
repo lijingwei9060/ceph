@@ -26,6 +26,11 @@ import { RgwDaemonListPage } from '@/features/rgw/daemon/pages/daemon-list';
 import { RgwUserListPage } from '@/features/rgw/user/pages/user-list';
 import { RgwBucketListPage } from '@/features/rgw/bucket/pages/bucket-list';
 import { MonitoringPage } from '@/features/monitoring/pages/monitoring-page';
+import { ActiveAlertsPage } from '@/features/monitoring/alerts/pages/active-alerts';
+import { RulesListPage } from '@/features/monitoring/alerts/pages/rules-list';
+import { SilenceListPage } from '@/features/monitoring/silences/pages/silence-list';
+import { SilenceFormPage } from '@/features/monitoring/silences/components/silence-form';
+import { GrafanaDashboardPage } from '@/features/monitoring/grafana/pages/grafana-dashboard';
 import { SettingsListPage } from '@/features/settings/pages/settings-list';
 import { UserListPage } from '@/features/user-management/users/pages/user-list';
 import { RoleListPage } from '@/features/user-management/roles/pages/role-list';
@@ -68,7 +73,15 @@ export const router = createHashRouter([
       { path: 'crush-map', element: <CrushMapPage /> },
       { path: 'mgr-modules', element: <ModuleListPage /> },
       { path: 'logs', element: <LogsPage /> },
-      { path: 'monitoring', element: <MonitoringPage /> },
+      { path: 'monitoring', element: <Navigate to="/monitoring/alerts" replace /> },
+      { path: 'monitoring/alerts', element: <ActiveAlertsPage /> },
+      { path: 'monitoring/rules', element: <RulesListPage /> },
+      { path: 'monitoring/silences', element: <SilenceListPage /> },
+      { path: 'monitoring/silences/create', element: <SilenceFormPage /> },
+      { path: 'monitoring/silences/create/:id', element: <SilenceFormPage /> },
+      { path: 'monitoring/silences/edit/:id', element: <SilenceFormPage /> },
+      { path: 'monitoring/silences/recreate/:id', element: <SilenceFormPage /> },
+      { path: 'monitoring/grafana', element: <GrafanaDashboardPage /> },
       { path: 'pools', element: <PoolListPage /> },
       { path: 'block', element: <Navigate to="/block/rbd" replace /> },
       { path: 'block/rbd', element: <RbdListPage /> },
