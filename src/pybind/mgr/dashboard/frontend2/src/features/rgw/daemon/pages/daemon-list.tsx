@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Cloud, RefreshCw } from 'lucide-react';
@@ -5,17 +6,24 @@ import { useRgwDaemons } from '../api/use-rgw-daemon';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { RgwDaemonDetailDialog } from '../components/rgw-daemon-detail';
 
 export function RgwDaemonListPage() {
   const { t } = useTranslation();
   const { data: daemons = [], isLoading, refetch } = useRgwDaemons();
+  const [detailSvcId, setDetailSvcId] = useState<string | null>(null);
 
   const columns: ColumnDef<(typeof daemons)[0]>[] = [
     {
       accessorKey: 'id',
       header: 'Daemon ID',
       cell: ({ row }) => (
-        <span className="font-medium font-mono">{row.original.id}</span>
+        <button
+          className="font-medium font-mono text-primary hover:underline"
+          onClick={() => setDetailSvcId(row.original.id)}
+        >
+          {row.original.id}
+        </button>
       ),
     },
     {
@@ -68,6 +76,12 @@ export function RgwDaemonListPage() {
         searchKey="id"
         searchPlaceholder="Filter by daemon ID..."
         isLoading={isLoading}
+      />
+
+      <RgwDaemonDetailDialog
+        svcId={detailSvcId}
+        open={detailSvcId !== null}
+        onClose={() => setDetailSvcId(null)}
       />
     </div>
   );

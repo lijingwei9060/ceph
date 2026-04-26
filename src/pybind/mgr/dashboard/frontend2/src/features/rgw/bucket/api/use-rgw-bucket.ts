@@ -26,22 +26,52 @@ export interface RgwBucket {
   num_objects?: number;
 }
 
+export interface RgwBucketDetail {
+  bucket: string;
+  tenant?: string;
+  id?: string;
+  bid?: string;
+  owner: string;
+  placement_rule: string;
+  index_type?: string;
+  marker?: string;
+  max_marker?: string;
+  ver?: string;
+  master_ver?: string;
+  mtime?: string;
+  zonegroup?: string;
+  zone?: string;
+  flags?: number;
+  num_shards?: number;
+  versioning?: {
+    Status: string;
+    MfaDelete: string;
+  };
+  encryption?: Record<string, unknown>;
+  lock_enabled?: boolean;
+  lock_mode?: string;
+  lock_retention_period_days?: number;
+  bucket_quota?: {
+    enabled?: boolean;
+    max_size_kb?: number;
+    max_objects?: number;
+  };
+}
+
 export function useRgwBuckets(stats = false) {
   return useQuery<RgwBucket[]>({
     queryKey: ['rgw', 'buckets', stats],
-    queryFn: async () => {
-      const url = stats ? 'rgw/bucket?stats=true' : 'rgw/bucket';
-      return apiClient.get(url, {
-        headers: { Accept: cephAcceptHeader(1, 1) },
-      }).json<RgwBucket[]>();
-    },
+    queryFn: async () => apiClient.get('rgw/bucket', {
+      headers: { Accept: cephAcceptHeader(1, 1) },
+      searchParams: stats ? { stats: 'true' } : undefined,
+    }).json<RgwBucket[]>(),
   });
 }
 
 export function useRgwBucket(bucketName: string | null) {
-  return useQuery<RgwBucket>({
+  return useQuery<RgwBucketDetail>({
     queryKey: ['rgw', 'buckets', bucketName],
-    queryFn: async () => apiClient.get(`rgw/bucket/${bucketName}`).json<RgwBucket>(),
+    queryFn: async () => apiClient.get(`rgw/bucket/${bucketName}`).json<RgwBucketDetail>(),
     enabled: !!bucketName,
   });
 }
@@ -68,6 +98,22 @@ export function useCreateRgwBucket() {
   }>({
     mutationFn: async (data) => {
       await apiClient.put('rgw/bucket', { json: data });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rgw', 'buckets'] });
+    },
+  });
+}
+
+export function useUpdateRgwBucket() {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, {
+    bucket: string;
+    uid?: string;
+    versioning?: string;
+  }>({
+    mutationFn: async ({ bucket, ...data }) => {
+      await apiClient.put(`rgw/bucket/${bucket}`, { json: data });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rgw', 'buckets'] });

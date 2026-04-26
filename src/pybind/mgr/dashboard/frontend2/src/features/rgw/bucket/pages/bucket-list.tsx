@@ -1,12 +1,26 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Archive, RefreshCw, Trash2, Plus } from 'lucide-react';
+import { Archive, RefreshCw, Trash2, Plus, Eye, MoreHorizontal } from 'lucide-react';
 import { useRgwBuckets, useDeleteRgwBucket, useCreateRgwBucket } from '../api/use-rgw-bucket';
+import { useRgwUserIds } from '../../user/api/use-rgw-user';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Dialog,
   DialogContent,
@@ -14,18 +28,35 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod/v4';
 import { formatDimlessBinary } from '@/lib/format';
 import { toast } from 'sonner';
+import { RgwBucketDetailDialog } from '../components/rgw-bucket-detail';
+
+const bucketCreateSchema = z.object({
+  bucket: z.string().min(1, 'Bucket name is required'),
+  uid: z.string().min(1, 'Owner is required'),
+});
+
+type BucketCreateData = z.infer<typeof bucketCreateSchema>;
 
 export function RgwBucketListPage() {
   const { t } = useTranslation();
   const { data: buckets = [], isLoading, refetch } = useRgwBuckets(true);
+  const { data: userIds } = useRgwUserIds();
   const deleteBucket = useDeleteRgwBucket();
   const createBucket = useCreateRgwBucket();
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
-  const [newBucketName, setNewBucketName] = useState('');
-  const [newBucketOwner, setNewBucketOwner] = useState('');
+  const [detailBucket, setDetailBucket] = useState<string | null>(null);
+
+  const form = useForm<BucketCreateData>({
+    resolver: zodResolver(bucketCreateSchema),
+    defaultValues: { bucket: '', uid: '' },
+  });
 
   const handleDelete = async () => {
     if (!deleteConfirm) return;
@@ -38,12 +69,28 @@ export function RgwBucketListPage() {
     }
   };
 
+  const handleCreate = async (data: BucketCreateData) => {
+    try {
+      await createBucket.mutateAsync({ bucket: data.bucket, uid: data.uid });
+      toast.success(`Bucket ${data.bucket} created`);
+      setShowCreate(false);
+      form.reset();
+    } catch {
+      toast.error('Failed to create bucket');
+    }
+  };
+
   const columns: ColumnDef<(typeof buckets)[0]>[] = [
     {
       accessorKey: 'bucket',
       header: 'Bucket',
       cell: ({ row }) => (
-        <span className="font-medium">{row.original.bid ?? row.original.bucket}</span>
+        <button
+          className="font-medium text-primary hover:underline"
+          onClick={() => setDetailBucket(row.original.bid ?? row.original.bucket)}
+        >
+          {row.original.bid ?? row.original.bucket}
+        </button>
       ),
     },
     {
@@ -95,15 +142,26 @@ export function RgwBucketListPage() {
       id: 'actions',
       header: '',
       cell: ({ row }) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-destructive"
-          onClick={() => setDeleteConfirm(row.original.bid ?? row.original.bucket)}
-        >
-          <Trash2 className="mr-1 h-3 w-3" />
-          Delete
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setDetailBucket(row.original.bid ?? row.original.bucket)}>
+              <Eye className="mr-2 h-4 w-4" />
+              View Details
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-destructive"
+              onClick={() => setDeleteConfirm(row.original.bid ?? row.original.bucket)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       ),
     },
   ];
@@ -145,14 +203,8 @@ export function RgwBucketListPage() {
             This will permanently remove all objects.
           </p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={deleteBucket.isPending}
-            >
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleteBucket.isPending}>
               {deleteBucket.isPending ? 'Deleting...' : 'Delete'}
             </Button>
           </DialogFooter>
@@ -164,37 +216,65 @@ export function RgwBucketListPage() {
           <DialogHeader>
             <DialogTitle>Create Bucket</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Bucket Name</label>
-              <Input value={newBucketName} onChange={(e) => setNewBucketName(e.target.value)} placeholder="my-bucket" />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Owner (User ID)</label>
-              <Input value={newBucketOwner} onChange={(e) => setNewBucketOwner(e.target.value)} placeholder="admin" />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
-              <Button
-                disabled={createBucket.isPending || !newBucketName || !newBucketOwner}
-                onClick={async () => {
-                  try {
-                    await createBucket.mutateAsync({ bucket: newBucketName, uid: newBucketOwner });
-                    toast.success(`Bucket ${newBucketName} created`);
-                    setShowCreate(false);
-                    setNewBucketName('');
-                    setNewBucketOwner('');
-                  } catch {
-                    toast.error('Failed to create bucket');
-                  }
-                }}
-              >
-                {createBucket.isPending ? 'Creating...' : 'Create'}
-              </Button>
-            </div>
-          </div>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleCreate)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="bucket"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bucket Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="my-bucket" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="uid"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Owner</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select user" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {userIds?.map((uid) => (
+                          <SelectItem key={uid} value={uid}>{uid}</SelectItem>
+                        ))}
+                        {!userIds?.length && (
+                          <SelectItem value="_manual">Enter manually below</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    {(!userIds?.length || field.value === '_manual') && (
+                      <Input className="mt-1" placeholder="Type user ID" value={field.value === '_manual' ? '' : field.value} onChange={field.onChange} />
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => { setShowCreate(false); form.reset(); }}>Cancel</Button>
+                <Button type="submit" disabled={createBucket.isPending}>
+                  {createBucket.isPending ? 'Creating...' : 'Create'}
+                </Button>
+              </div>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
+
+      <RgwBucketDetailDialog
+        bucketName={detailBucket}
+        open={detailBucket !== null}
+        onClose={() => setDetailBucket(null)}
+      />
     </div>
   );
 }
