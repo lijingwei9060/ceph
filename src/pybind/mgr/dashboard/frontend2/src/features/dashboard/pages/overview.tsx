@@ -8,36 +8,92 @@ import { useFeatureToggles } from '@/features/health/api/use-health';
 import { getHealthColor, getHealthLabel } from '@/lib/health';
 import { formatDimlessBinary, formatDimless } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+
+/* ── PG category logic (ported from Angular pg-category.service) ── */
+
+const PG_WORKING_STATES = new Set([
+  'activating', 'backfill_wait', 'backfilling', 'creating', 'deep',
+  'degraded', 'forced_backfill', 'forced_recovery', 'peering', 'peered',
+  'recovering', 'recovery_wait', 'repair', 'scrubbing', 'snaptrim', 'snaptrim_wait',
+]);
+
+const PG_WARNING_STATES = new Set([
+  'backfill_toofull', 'backfill_unfound', 'down', 'incomplete', 'inconsistent',
+  'recovery_toofull', 'recovery_unfound', 'remapped', 'snaptrim_error', 'stale', 'undersized',
+]);
+
+const PG_CLEAN_STATES = new Set(['active', 'clean']);
+
+function categorizePgStates(statuses: Record<string, number>): {
+  clean: number; working: number; warning: number; unknown: number; total: number;
+} {
+  const result = { clean: 0, working: 0, warning: 0, unknown: 0, total: 0 };
+
+  for (const [pgStatesText, pgAmount] of Object.entries(statuses)) {
+    const states = [...new Set(pgStatesText.replace(/[^a-z_]+/g, ' ').trim().split(' '))];
+    if (states.length === 0 || states[0] === '') {
+      result.unknown += pgAmount;
+      continue;
+    }
+
+    const hasWarning = states.some((s) => PG_WARNING_STATES.has(s));
+    if (hasWarning) {
+      result.warning += pgAmount;
+      continue;
+    }
+
+    const workingCount = states.filter((s) => PG_WORKING_STATES.has(s)).length;
+    const cleanCount = states.filter((s) => PG_CLEAN_STATES.has(s)).length;
+
+    if (states.length > cleanCount + workingCount) {
+      result.unknown += pgAmount;
+    } else if (workingCount > 0) {
+      result.working += pgAmount;
+    } else {
+      result.clean += pgAmount;
+    }
+    result.total += pgAmount;
+  }
+
+  return result;
+}
+
+function calcPercentage(dividend: number, divisor: number): number {
+  if (!Number.isFinite(dividend) || !Number.isFinite(divisor) || divisor === 0) return 0;
+  return Math.ceil((dividend / divisor) * 100 * 100) / 100;
+}
+
+/* ── Small reusable components ── */
 
 interface InfoCardProps {
   title: string;
+  titleLink?: string;
   children: React.ReactNode;
-  linkTo?: string;
   className?: string;
 }
 
-function InfoCard({ title, children, linkTo, className }: InfoCardProps) {
+function InfoCard({ title, titleLink, children, className }: InfoCardProps) {
   const navigate = useNavigate();
 
   return (
-    <Card
-      className={cn('min-w-[180px]', className)}
-      onClick={() => linkTo && navigate(linkTo)}
-      role={linkTo ? 'button' : undefined}
-      tabIndex={linkTo ? 0 : undefined}
-      onKeyDown={(e) => {
-        if (linkTo && (e.key === 'Enter' || e.key === ' ')) {
-          navigate(linkTo);
-        }
-      }}
-      style={linkTo ? { cursor: 'pointer' } : undefined}
-    >
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {title}
+    <Card className={cn('min-w-[220px] flex-1', className)}>
+      <CardHeader className="pb-1 pt-3 px-4">
+        <CardTitle className="text-sm font-medium">
+          {titleLink ? (
+            <button
+              type="button"
+              className="text-primary hover:underline p-0 bg-transparent border-0 cursor-pointer font-medium text-sm"
+              onClick={() => navigate(titleLink)}
+            >
+              {title}
+            </button>
+          ) : (
+            title
+          )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="text-sm">
+      <CardContent className="px-4 pb-3 text-sm">
         {children}
       </CardContent>
     </Card>
@@ -52,7 +108,7 @@ interface InfoGroupProps {
 function InfoGroup({ title, children }: InfoGroupProps) {
   return (
     <div className="space-y-3">
-      <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         {title}
       </h3>
       <div className="flex flex-wrap gap-3">
@@ -61,6 +117,76 @@ function InfoGroup({ title, children }: InfoGroupProps) {
     </div>
   );
 }
+
+/* ── Donut chart wrapper ── */
+
+const CHART_COLORS = {
+  cyan: '#06b6d4',
+  purple: '#a855f7',
+  blue: '#3b82f6',
+  gray: '#9ca3af',
+  green: '#22c55e',
+  yellow: '#eab308',
+  red: '#ef4444',
+  orange: '#f97316',
+};
+
+interface DonutCardProps {
+  title: string;
+  titleLink?: string;
+  centerLabel: string;
+  data: Array<{ name: string; value: number; color: string }>;
+}
+
+function DonutCard({ title, titleLink, centerLabel, data }: DonutCardProps) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tooltipFormatter = (value: any, name: any) => [String(value) + '%', String(name)];
+
+  return (
+    <InfoCard title={title} titleLink={titleLink} className="min-w-[260px]">
+      <div className="flex items-center gap-2">
+        <div className="w-[120px] h-[120px] shrink-0 relative">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                innerRadius={30}
+                outerRadius={55}
+                dataKey="value"
+                stroke="none"
+              >
+                {data.map((entry, index) => (
+                  <Cell key={index} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip formatter={tooltipFormatter} />
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <span className="text-[10px] text-center leading-tight whitespace-pre-line">
+              {centerLabel}
+            </span>
+          </div>
+        </div>
+        <div className="flex-1 space-y-1 text-xs">
+          {data.map((item) => (
+            <div key={item.name} className="flex items-center gap-1.5">
+              <span
+                className="inline-block w-2 h-2 rounded-full shrink-0"
+                style={{ backgroundColor: item.color }}
+              />
+              <span className="truncate">{item.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </InfoCard>
+  );
+}
+
+/* ── Main Dashboard component ── */
 
 export function DashboardOverview() {
   const { t } = useTranslation();
@@ -81,55 +207,99 @@ export function DashboardOverview() {
   const healthLabel = getHealthLabel(healthStatus);
   const version = summary.version;
 
-  // Hosts
+  // ── Status data ──
   const hostsCount = healthFull?.hosts;
 
-  // Monitors
   const monStatus = healthFull?.mon_status;
   const totalMons = monStatus?.monmap?.mons?.length ?? 0;
   const inQuorum = monStatus?.quorum?.length ?? 0;
 
-  // Managers
-  const mgrMap = healthFull?.mgr_map;
-  const activeMgr = mgrMap?.active_name ?? '-';
-  const standbyMgrs = mgrMap?.standbys?.length ?? 0;
-
-  // OSDs
   const osds = healthFull?.osd_map?.osds ?? [];
   const osdUp = osds.filter((o) => o.up === 1).length;
   const osdIn = osds.filter((o) => o.in === 1).length;
   const osdTotal = osds.length;
+  const osdDown = osdTotal - osdUp;
+  const osdOut = osdTotal - osdIn;
+  const nearFullCount = osds.filter((o) => Array.isArray((o as Record<string, unknown>).state) && ((o as Record<string, unknown>).state as string[]).includes('nearfull')).length;
+  const fullCount = osds.filter((o) => Array.isArray((o as Record<string, unknown>).state) && ((o as Record<string, unknown>).state as string[]).includes('full')).length;
 
-  // RGW
+  const mgrMap = healthFull?.mgr_map;
+  const standbyMgrs = mgrMap?.standbys?.length ?? 0;
+
   const rgwCount = healthFull?.rgw;
 
-  // MDS (Metadata Servers)
-  const fsMap = healthFull?.fs_map as { filesystems?: Array<{ up?: number; total?: number; name?: string }> } | undefined;
-  const mdsUp = fsMap?.filesystems?.reduce((sum, fs) => sum + (fs.up ?? 0), 0) ?? 0;
-  const mdsTotal = fsMap?.filesystems?.reduce((sum, fs) => sum + (fs.total ?? 0), 0) ?? 0;
+  // MDS summary - use fs_map properly with mdsmap.info
+  const fsMap = healthFull?.fs_map as {
+    standbys?: Array<{ name: string }>;
+    filesystems?: Array<{
+      mdsmap?: {
+        info?: Record<string, { name: string; state: string }>;
+      };
+    }>;
+  } | undefined;
+  let mdsActive = 0;
+  let mdsStandbyReplay = 0;
+  const mdsStandbys = fsMap?.standbys?.length ?? 0;
+  let mdsNoFilesystems = false;
 
-  // iSCSI
+  if (fsMap?.standbys && !fsMap?.filesystems) {
+    mdsNoFilesystems = false; // standbys only, show "X up"
+  } else if (fsMap?.filesystems && fsMap.filesystems.length === 0) {
+    mdsNoFilesystems = true;
+  } else if (fsMap?.filesystems) {
+    for (const fs of fsMap.filesystems) {
+      const info = fs.mdsmap?.info;
+      if (info) {
+        for (const mds of Object.values(info)) {
+          if (mds.state === 'up:standby-replay') {
+            mdsStandbyReplay += 1;
+          } else {
+            mdsActive += 1;
+          }
+        }
+      }
+    }
+  }
+
   const iscsiDaemons = healthFull?.iscsi_daemons;
   const iscsiUp = iscsiDaemons?.up ?? 0;
   const iscsiDown = iscsiDaemons?.down ?? 0;
   const iscsiTotal = iscsiUp + iscsiDown;
 
-  // Capacity
+  // ── Capacity data ──
   const dfStats = healthFull?.df?.stats;
   const capacityTotal = dfStats?.total_bytes ?? 0;
+  const capacityUsed = dfStats?.total_used_raw_bytes ?? 0;
+  const capacityAvail = capacityTotal - capacityUsed;
+  const usedPercent = calcPercentage(capacityUsed, capacityTotal);
 
-  // Objects
   const objectStats = healthFull?.pg_info?.object_stats;
-  const totalObjects = objectStats?.num_objects ?? 0;
+  const objectCopies = objectStats?.num_object_copies ?? 0;
+  const objHealthy = objectCopies
+    - (objectStats?.num_objects_misplaced ?? 0)
+    - (objectStats?.num_objects_degraded ?? 0)
+    - (objectStats?.num_objects_unfound ?? 0);
+  const objTotal = objectStats?.num_objects ?? 0;
 
-  // PG Status
   const pgStatuses = healthFull?.pg_info?.statuses ?? {};
-  const totalPGs = Object.values(pgStatuses).reduce((sum, count) => sum + (count as number), 0);
+  const pgCategory = categorizePgStates(pgStatuses);
 
-  // Pools
   const poolsCount = healthFull?.pools?.length ?? 0;
+  const pgsPerOsd = healthFull?.pg_info?.pgs_per_osd;
 
-  // Determine if we should show each section based on data availability
+  // ── Performance data ──
+  const clientPerf = healthFull?.client_perf;
+  const readOps = clientPerf?.read_op_per_sec ?? 0;
+  const writeOps = clientPerf?.write_op_per_sec ?? 0;
+  const totalIOPS = readOps + writeOps;
+  const readBytes = clientPerf?.read_bytes_sec ?? 0;
+  const writeBytes = clientPerf?.write_bytes_sec ?? 0;
+  const totalThroughput = readBytes + writeBytes;
+  const recoveryBytes = clientPerf?.recovering_bytes_per_sec ?? 0;
+
+  const scrubStatus = healthFull?.scrub_status;
+
+  // ── Section visibility ──
   const showStatusSection =
     healthStatus ||
     hostsCount != null ||
@@ -137,10 +307,12 @@ export function DashboardOverview() {
     osdTotal > 0 ||
     mgrMap ||
     (rgwCount != null && featureToggles?.rgw) ||
-    (mdsTotal > 0 && featureToggles?.cephfs) ||
+    (fsMap && featureToggles?.cephfs) ||
     (iscsiTotal > 0 && featureToggles?.iscsi);
 
-  const showCapacitySection = capacityTotal > 0 || totalObjects > 0 || totalPGs > 0 || poolsCount > 0;
+  const showCapacitySection = dfStats || objTotal > 0 || pgCategory.total > 0 || poolsCount > 0 || pgsPerOsd != null;
+
+  const showPerformanceSection = clientPerf || scrubStatus;
 
   return (
     <div className="space-y-6">
@@ -156,105 +328,208 @@ export function DashboardOverview() {
         </Badge>
       </div>
 
-      {/* Status Section */}
+      {/* ── Status Section ── */}
       {showStatusSection && (
         <InfoGroup title={t('dashboard.clusterStatus')}>
           {/* Cluster Status */}
           {healthStatus && (
             <InfoCard title={t('dashboard.healthStatus')}>
-              <Badge variant="outline" className={cn('text-xs', healthColor)}>
+              <div className={cn('font-bold text-lg', healthColor)}>
                 {t(`dashboard.${healthLabel}`, healthLabel)}
-              </Badge>
+              </div>
             </InfoCard>
           )}
 
           {/* Hosts */}
           {hostsCount != null && (
-            <InfoCard title={t('nav.hosts')} linkTo="/hosts">
-              {hostsCount} total
+            <InfoCard title={t('nav.hosts')} titleLink="/hosts">
+              <span className="font-bold">{hostsCount}</span> total
             </InfoCard>
           )}
 
           {/* Monitors */}
           {monStatus && (
-            <InfoCard title={t('nav.monitors')} linkTo="/monitors">
-              {inQuorum}/{totalMons} {t('dashboard.healthy').toLowerCase()}
+            <InfoCard title={t('nav.monitors')} titleLink="/monitors">
+              <span className="font-bold">{totalMons}</span> ({t('dashboard.healthy').toLowerCase()} {inQuorum})
             </InfoCard>
           )}
 
           {/* OSDs */}
           {osdTotal > 0 && (
-            <InfoCard title={t('nav.osd')} linkTo="/osd">
-              {osdUp}/{osdTotal} up, {osdIn}/{osdTotal} in
+            <InfoCard title={t('nav.osd')} titleLink="/osd">
+              <span className="font-bold">{osdTotal}</span> total
+              <br />
+              {osdUp} up, {osdIn} in
+              {(osdDown > 0 || osdOut > 0) && (
+                <>
+                  <br />
+                  <span className="text-destructive">
+                    {osdDown > 0 ? `${osdDown} down` : ''}
+                    {osdDown > 0 && osdOut > 0 ? ', ' : ''}
+                    {osdOut > 0 ? `${osdOut} out` : ''}
+                  </span>
+                </>
+              )}
+              {nearFullCount > 0 && (
+                <>
+                  <br />
+                  <span className="text-destructive">{nearFullCount} near full</span>
+                </>
+              )}
+              {fullCount > 0 && (
+                <>
+                  <br />
+                  <span className="text-destructive">{fullCount} full</span>
+                </>
+              )}
             </InfoCard>
           )}
 
           {/* Managers */}
           {mgrMap && (
             <InfoCard title={t('dashboard.managers')}>
-              {activeMgr} {t('dashboard.active').toLowerCase()}
-              {standbyMgrs > 0 && `, ${standbyMgrs} ${t('common.inactive').toLowerCase()}`}
+              <span>1 {t('dashboard.active').toLowerCase()}</span>
+              <br />
+              <span>{standbyMgrs} {t('dashboard.standby').toLowerCase()}</span>
             </InfoCard>
           )}
 
           {/* Object Gateways */}
           {rgwCount != null && featureToggles?.rgw && (
-            <InfoCard title={t('nav.objectGateways')} linkTo="/rgw/daemon">
-              {rgwCount} total
+            <InfoCard title={t('nav.objectGateways')} titleLink="/rgw/daemon">
+              <span className="font-bold">{rgwCount}</span> total
             </InfoCard>
           )}
 
           {/* Metadata Servers */}
-          {mdsTotal > 0 && featureToggles?.cephfs && (
+          {fsMap && featureToggles?.cephfs && (
             <InfoCard title={t('nav.metadataServers')}>
-              {mdsUp}/{mdsTotal} up
+              {fsMap.standbys && !fsMap.filesystems ? (
+                <span>{mdsStandbys} {t('dashboard.healthy').toLowerCase()}</span>
+              ) : mdsNoFilesystems ? (
+                <span>{t('dashboard.noFilesystems', 'no filesystems')}</span>
+              ) : (
+                <>
+                  <span>{mdsActive} {t('dashboard.active').toLowerCase()}</span>
+                  <br />
+                  <span>{mdsStandbys + mdsStandbyReplay} {t('dashboard.standby').toLowerCase()}</span>
+                </>
+              )}
             </InfoCard>
           )}
 
           {/* iSCSI Gateways */}
           {iscsiTotal > 0 && featureToggles?.iscsi && (
-            <InfoCard title={t('nav.iscsiGateways')} linkTo="/block/iscsi">
-              {iscsiTotal} total
+            <InfoCard title={t('nav.iscsiGateways')} titleLink="/block/iscsi">
+              <span className="font-bold">{iscsiTotal}</span> total
               <br />
-              <span className="text-xs text-muted-foreground">
-                {iscsiUp} up,{' '}
-                <span className={iscsiDown > 0 ? 'text-destructive' : ''}>
-                  {iscsiDown} down
-                </span>
+              {iscsiUp} up,{' '}
+              <span className={iscsiDown > 0 ? 'text-destructive' : ''}>
+                {iscsiDown} down
               </span>
             </InfoCard>
           )}
         </InfoGroup>
       )}
 
-      {/* Capacity Section */}
+      {/* ── Capacity Section ── */}
       {showCapacitySection && (
         <InfoGroup title={t('dashboard.capacity')}>
-          {/* Raw Capacity */}
-          {capacityTotal > 0 && (
-            <InfoCard title={t('dashboard.rawCapacity')} linkTo="/pools">
-              {formatDimlessBinary(capacityTotal)}
-            </InfoCard>
+          {/* Raw Capacity - donut */}
+          {dfStats && (
+            <DonutCard
+              title={t('dashboard.rawCapacity')}
+              titleLink="/pools"
+              centerLabel={`${usedPercent}%\nof ${formatDimlessBinary(capacityTotal)}`}
+              data={[
+                { name: `${t('common.used')}: ${formatDimlessBinary(capacityUsed)}`, value: usedPercent, color: usedPercent >= 85 ? CHART_COLORS.red : usedPercent >= 70 ? CHART_COLORS.yellow : CHART_COLORS.blue },
+                { name: `${t('common.available')}: ${formatDimlessBinary(capacityAvail)}`, value: calcPercentage(capacityAvail, capacityTotal), color: CHART_COLORS.gray },
+              ]}
+            />
           )}
 
-          {/* Objects */}
-          {totalObjects > 0 && (
-            <InfoCard title={t('dashboard.objects')}>
-              {formatDimlessBinary(totalObjects)}
-            </InfoCard>
+          {/* Objects - donut */}
+          {objectStats && objTotal > 0 && (
+            <DonutCard
+              title={t('dashboard.objects')}
+              centerLabel={`${formatDimless(objTotal)}\n${t('dashboard.objects').toLowerCase()}`}
+              data={[
+                { name: `${t('dashboard.healthy')}: ${calcPercentage(objHealthy, objectCopies)}%`, value: calcPercentage(objHealthy, objectCopies), color: CHART_COLORS.green },
+                { name: `${t('dashboard.misplaced')}: ${calcPercentage(objectStats.num_objects_misplaced ?? 0, objectCopies)}%`, value: calcPercentage(objectStats.num_objects_misplaced ?? 0, objectCopies), color: CHART_COLORS.yellow },
+                { name: `${t('dashboard.degraded')}: ${calcPercentage(objectStats.num_objects_degraded ?? 0, objectCopies)}%`, value: calcPercentage(objectStats.num_objects_degraded ?? 0, objectCopies), color: CHART_COLORS.red },
+                { name: `${t('dashboard.unfound')}: ${calcPercentage(objectStats.num_objects_unfound ?? 0, objectCopies)}%`, value: calcPercentage(objectStats.num_objects_unfound ?? 0, objectCopies), color: CHART_COLORS.orange },
+              ]}
+            />
           )}
 
-          {/* PGs */}
-          {totalPGs > 0 && (
-            <InfoCard title={t('dashboard.pgStatus')}>
-              {formatDimless(totalPGs)} PGs
-            </InfoCard>
+          {/* PG Status - donut */}
+          {pgCategory.total > 0 && (
+            <DonutCard
+              title={t('dashboard.pgStatus')}
+              centerLabel={`${pgCategory.total}\nPGs`}
+              data={[
+                { name: `${t('dashboard.clean')}: ${formatDimless(pgCategory.clean)}`, value: calcPercentage(pgCategory.clean, pgCategory.total), color: CHART_COLORS.green },
+                { name: `${t('dashboard.working')}: ${formatDimless(pgCategory.working)}`, value: calcPercentage(pgCategory.working, pgCategory.total), color: CHART_COLORS.blue },
+                { name: `${t('dashboard.warning')}: ${formatDimless(pgCategory.warning)}`, value: calcPercentage(pgCategory.warning, pgCategory.total), color: CHART_COLORS.yellow },
+                { name: `${t('dashboard.unknown')}: ${formatDimless(pgCategory.unknown)}`, value: calcPercentage(pgCategory.unknown, pgCategory.total), color: CHART_COLORS.gray },
+              ]}
+            />
           )}
 
-          {/* Pools count */}
+          {/* Pools */}
           {poolsCount > 0 && (
-            <InfoCard title={t('nav.pools')} linkTo="/pools">
-              {poolsCount}
+            <InfoCard title={t('nav.pools')} titleLink="/pools">
+              <span className="font-bold text-lg">{poolsCount}</span>
+            </InfoCard>
+          )}
+
+          {/* PGs per OSD */}
+          {pgsPerOsd != null && (
+            <InfoCard title={t('dashboard.pgsPerOsd', 'PGs per OSD')}>
+              <span className="font-bold text-lg">{formatDimless(pgsPerOsd)}</span>
+            </InfoCard>
+          )}
+        </InfoGroup>
+      )}
+
+      {/* ── Performance Section ── */}
+      {showPerformanceSection && (
+        <InfoGroup title={t('dashboard.performance')}>
+          {/* Client Read/Write - donut */}
+          {clientPerf && totalIOPS > 0 && (
+            <DonutCard
+              title={t('dashboard.clientReadWrite', 'Client Read/Write')}
+              centerLabel={`${formatDimless(totalIOPS)}\nIOPS`}
+              data={[
+                { name: `${t('dashboard.read')}: ${formatDimless(readOps)} /s`, value: calcPercentage(readOps, totalIOPS), color: CHART_COLORS.cyan },
+                { name: `${t('dashboard.write')}: ${formatDimless(writeOps)} /s`, value: calcPercentage(writeOps, totalIOPS), color: CHART_COLORS.purple },
+              ]}
+            />
+          )}
+
+          {/* Client Throughput - donut */}
+          {clientPerf && totalThroughput > 0 && (
+            <DonutCard
+              title={t('dashboard.clientThroughput')}
+              centerLabel={`${formatDimlessBinary(totalThroughput).replace(' ', '\n')}/s`}
+              data={[
+                { name: `${t('dashboard.read')}: ${formatDimlessBinary(readBytes)}/s`, value: calcPercentage(readBytes, totalThroughput), color: CHART_COLORS.cyan },
+                { name: `${t('dashboard.write')}: ${formatDimlessBinary(writeBytes)}/s`, value: calcPercentage(writeBytes, totalThroughput), color: CHART_COLORS.purple },
+              ]}
+            />
+          )}
+
+          {/* Recovery Throughput */}
+          {clientPerf && (
+            <InfoCard title={t('dashboard.recoveryThroughput')}>
+              <span className="font-bold text-lg">{formatDimlessBinary(recoveryBytes)}/s</span>
+            </InfoCard>
+          )}
+
+          {/* Scrubbing */}
+          {scrubStatus != null && (
+            <InfoCard title={t('dashboard.scrubbing')}>
+              <span className="font-bold text-lg">{String(scrubStatus)}</span>
             </InfoCard>
           )}
         </InfoGroup>

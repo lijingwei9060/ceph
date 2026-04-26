@@ -134,6 +134,7 @@
     "pgStatus": "PG 状态",
     "pools": "存储池",
     "clientIOPS": "客户端 IOPS",
+    "clientReadWrite": "客户端读写",
     "clientThroughput": "客户端吞吐量",
     "recoveryThroughput": "恢复吞吐量",
     "scrubbing": "清洗",
@@ -144,7 +145,14 @@
     "error": "错误",
     "clean": "正常",
     "working": "工作中",
-    "unknown": "未知"
+    "unknown": "未知",
+    "active": "活跃",
+    "standby": "待命",
+    "misplaced": "错位",
+    "degraded": "降级",
+    "unfound": "未找到",
+    "noFilesystems": "无文件系统",
+    "pgsPerOsd": "每 OSD 的 PG 数"
   },
   "hosts": {
     "title": "主机",

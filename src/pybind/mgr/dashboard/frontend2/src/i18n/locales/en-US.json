@@ -134,6 +134,7 @@
     "pgStatus": "PG Status",
     "pools": "Pools",
     "clientIOPS": "Client IOPS",
+    "clientReadWrite": "Client Read/Write",
     "clientThroughput": "Client Throughput",
     "recoveryThroughput": "Recovery Throughput",
     "scrubbing": "Scrubbing",
@@ -144,7 +145,14 @@
     "error": "Error",
     "clean": "Clean",
     "working": "Working",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "active": "Active",
+    "standby": "Standby",
+    "misplaced": "Misplaced",
+    "degraded": "Degraded",
+    "unfound": "Unfound",
+    "noFilesystems": "no filesystems",
+    "pgsPerOsd": "PGs per OSD"
   },
   "hosts": {
     "title": "Hosts",
