@@ -3,21 +3,22 @@ import { apiClient } from '@/lib/api-client';
 import { summarySchema, featureTogglesSchema } from '@/types/schemas';
 import type { Summary, FeatureToggles, ClusterHealth } from '@/types';
 
-export function useSummary() {
+export function useSummary(refetchInterval?: number) {
   return useQuery<Summary>({
     queryKey: ['summary'],
     queryFn: async () => {
       const data = await apiClient.get('summary').json();
       return summarySchema.parse(data) as Summary;
     },
-    refetchInterval: 5_000,
+    refetchInterval: refetchInterval ?? 5_000,
   });
 }
 
-export function useHealthFull() {
+export function useHealthFull(refetchInterval?: number) {
   return useQuery<ClusterHealth>({
     queryKey: ['health', 'full'],
     queryFn: async () => apiClient.get('health/full').json<ClusterHealth>(),
+    refetchInterval,
   });
 }
 

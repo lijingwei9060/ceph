@@ -1,16 +1,13 @@
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
-import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useFeatureToggles } from '@/features/health/api/use-health';
-import { apiClient } from '@/lib/api-client';
+import { useSummary, useHealthFull, useFeatureToggles } from '@/features/health/api/use-health';
 import { getHealthColor, getHealthLabel } from '@/lib/health';
 import { formatDimlessBinary, formatDimless } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import type { ClusterHealth } from '@/types';
 
 /* ── Refresh interval options ── */
 
@@ -263,17 +260,8 @@ export function DashboardOverview() {
   const { data: featureToggles } = useFeatureToggles();
 
   // Auto-refreshing queries with configurable interval
-  const { data: summary, isLoading: summaryLoading } = useQuery({
-    queryKey: ['summary'],
-    queryFn: async () => apiClient.get('summary').json(),
-    refetchInterval: refreshInterval,
-  });
-
-  const { data: healthFull, isLoading: healthLoading } = useQuery<ClusterHealth>({
-    queryKey: ['health', 'full'],
-    queryFn: async () => apiClient.get('health/full').json<ClusterHealth>(),
-    refetchInterval: refreshInterval,
-  });
+  const { data: summary, isLoading: summaryLoading } = useSummary(refreshInterval);
+  const { data: healthFull, isLoading: healthLoading } = useHealthFull(refreshInterval);
 
   if (summaryLoading || healthLoading || !summary) {
     return (
@@ -283,10 +271,10 @@ export function DashboardOverview() {
     );
   }
 
-  const healthStatus = (summary as Record<string, unknown>).health_status as string;
+  const healthStatus = summary.health_status;
   const healthColor = getHealthColor(healthStatus);
   const healthLabel = getHealthLabel(healthStatus);
-  const version = (summary as Record<string, unknown>).version as string;
+  const version = summary.version;
 
   // ── Status data ──
   const hostsCount = healthFull?.hosts;
@@ -605,14 +593,14 @@ export function DashboardOverview() {
 
           {/* Recovery Throughput */}
           {clientPerf && (
-            <InfoCard title={t('dashboard.recoveryThroughput')}>
+            <InfoCard title={t('dashboard.recoveryThroughput')} className="w-[260px]">
               <span className="font-bold text-lg">{formatDimlessBinary(recoveryBytes)}/s</span>
             </InfoCard>
           )}
 
           {/* Scrubbing */}
           {scrubStatus != null && (
-            <InfoCard title={t('dashboard.scrubbing')}>
+            <InfoCard title={t('dashboard.scrubbing')} className="w-[260px]">
               <span className="font-bold text-lg">{String(scrubStatus)}</span>
             </InfoCard>
           )}
