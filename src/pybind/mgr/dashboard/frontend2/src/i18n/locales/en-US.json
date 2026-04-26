@@ -88,6 +88,9 @@
     "iscsi": "iSCSI",
     "nfs": "NFS",
     "object": "Object Gateway",
+    "objectGateways": "Object Gateways",
+    "metadataServers": "Metadata Servers",
+    "iscsiGateways": "iSCSI Gateways",
     "rgw": "Object Gateway",
     "rgwDaemons": "Daemons",
     "rgwUsers": "Users",
@@ -152,7 +155,8 @@
     "degraded": "Degraded",
     "unfound": "Unfound",
     "noFilesystems": "no filesystems",
-    "pgsPerOsd": "PGs per OSD"
+    "pgsPerOsd": "PGs per OSD",
+    "refresh": "Refresh"
   },
   "hosts": {
     "title": "Hosts",

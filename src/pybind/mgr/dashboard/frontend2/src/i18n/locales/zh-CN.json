@@ -88,6 +88,9 @@
     "iscsi": "iSCSI",
     "nfs": "NFS",
     "object": "对象网关",
+    "objectGateways": "对象网关",
+    "metadataServers": "元数据服务器",
+    "iscsiGateways": "iSCSI 网关",
     "rgw": "对象网关",
     "rgwDaemons": "守护进程",
     "rgwUsers": "用户",
@@ -152,7 +155,8 @@
     "degraded": "降级",
     "unfound": "未找到",
     "noFilesystems": "无文件系统",
-    "pgsPerOsd": "每 OSD 的 PG 数"
+    "pgsPerOsd": "每 OSD 的 PG 数",
+    "refresh": "刷新"
   },
   "hosts": {
     "title": "主机",

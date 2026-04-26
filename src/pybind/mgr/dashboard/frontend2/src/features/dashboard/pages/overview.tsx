@@ -1,14 +1,28 @@
+import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useSummary } from '@/features/health/api/use-health';
-import { useHealthFull } from '@/features/health/api/use-health';
 import { useFeatureToggles } from '@/features/health/api/use-health';
+import { apiClient } from '@/lib/api-client';
 import { getHealthColor, getHealthLabel } from '@/lib/health';
 import { formatDimlessBinary, formatDimless } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import type { ClusterHealth } from '@/types';
+
+/* ── Refresh interval options ── */
+
+const INTERVAL_OPTIONS = [
+  { label: '5 s', value: 5_000 },
+  { label: '10 s', value: 10_000 },
+  { label: '15 s', value: 15_000 },
+  { label: '30 s', value: 30_000 },
+  { label: '1 min', value: 60_000 },
+  { label: '3 min', value: 180_000 },
+  { label: '5 min', value: 300_000 },
+] as const;
 
 /* ── PG category logic (ported from Angular pg-category.service) ── */
 
@@ -77,7 +91,7 @@ function InfoCard({ title, titleLink, children, className }: InfoCardProps) {
   const navigate = useNavigate();
 
   return (
-    <Card className={cn('min-w-[220px] flex-1', className)}>
+    <Card className={cn('w-[220px]', className)}>
       <CardHeader className="pb-1 pt-3 px-4">
         <CardTitle className="text-sm font-medium">
           {titleLink ? (
@@ -118,7 +132,33 @@ function InfoGroup({ title, children }: InfoGroupProps) {
   );
 }
 
-/* ── Donut chart wrapper ── */
+/* ── Refresh selector ── */
+
+function RefreshSelector({ value, onChange }: { value: number; onChange: (ms: number) => void }) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="flex items-center gap-2">
+      <label htmlFor="refresh-interval" className="text-sm text-muted-foreground">
+        {t('dashboard.refresh', 'Refresh')}
+      </label>
+      <select
+        id="refresh-interval"
+        className="h-8 rounded-md border bg-background px-2 text-sm"
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+      >
+        {INTERVAL_OPTIONS.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+/* ── Donut chart wrapper with click-to-filter ── */
 
 const CHART_COLORS = {
   cyan: '#06b6d4',
@@ -139,26 +179,47 @@ interface DonutCardProps {
 }
 
 function DonutCard({ title, titleLink, centerLabel, data }: DonutCardProps) {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const tooltipFormatter = (value: any, name: any) => [String(value) + '%', String(name)];
 
+  const handleClick = useCallback((_: unknown, index: number) => {
+    setActiveIndex((prev) => (prev === index ? null : index));
+  }, []);
+
+  const displayedData = data.map((item, i) => ({
+    ...item,
+    value: activeIndex != null && i !== activeIndex ? 0 : item.value,
+  }));
+
+  const displayedCenterLabel = activeIndex != null
+    ? `${data[activeIndex].name.split(':')[0]}\n${data[activeIndex].value}%`
+    : centerLabel;
+
   return (
-    <InfoCard title={title} titleLink={titleLink} className="min-w-[260px]">
+    <InfoCard title={title} titleLink={titleLink} className="w-[260px]">
       <div className="flex items-center gap-2">
         <div className="w-[120px] h-[120px] shrink-0 relative">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={data}
+                data={displayedData}
                 cx="50%"
                 cy="50%"
                 innerRadius={30}
                 outerRadius={55}
                 dataKey="value"
                 stroke="none"
+                onClick={(_, index) => handleClick(_, index)}
+                style={{ cursor: 'pointer' }}
               >
-                {data.map((entry, index) => (
-                  <Cell key={index} fill={entry.color} />
+                {displayedData.map((entry, index) => (
+                  <Cell
+                    key={index}
+                    fill={entry.color}
+                    opacity={activeIndex != null && index !== activeIndex ? 0.3 : 1}
+                  />
                 ))}
               </Pie>
               <Tooltip formatter={tooltipFormatter} />
@@ -166,19 +227,27 @@ function DonutCard({ title, titleLink, centerLabel, data }: DonutCardProps) {
           </ResponsiveContainer>
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <span className="text-[10px] text-center leading-tight whitespace-pre-line">
-              {centerLabel}
+              {displayedCenterLabel}
             </span>
           </div>
         </div>
         <div className="flex-1 space-y-1 text-xs">
-          {data.map((item) => (
-            <div key={item.name} className="flex items-center gap-1.5">
+          {data.map((item, i) => (
+            <button
+              key={item.name}
+              type="button"
+              className={cn(
+                'flex items-center gap-1.5 w-full text-left hover:bg-muted/50 rounded px-0.5',
+                activeIndex === i && 'bg-muted/50 font-medium',
+              )}
+              onClick={() => handleClick(null, i)}
+            >
               <span
                 className="inline-block w-2 h-2 rounded-full shrink-0"
                 style={{ backgroundColor: item.color }}
               />
               <span className="truncate">{item.name}</span>
-            </div>
+            </button>
           ))}
         </div>
       </div>
@@ -190,9 +259,21 @@ function DonutCard({ title, titleLink, centerLabel, data }: DonutCardProps) {
 
 export function DashboardOverview() {
   const { t } = useTranslation();
-  const { data: summary, isLoading: summaryLoading } = useSummary();
-  const { data: healthFull, isLoading: healthLoading } = useHealthFull();
+  const [refreshInterval, setRefreshInterval] = useState(5_000);
   const { data: featureToggles } = useFeatureToggles();
+
+  // Auto-refreshing queries with configurable interval
+  const { data: summary, isLoading: summaryLoading } = useQuery({
+    queryKey: ['summary'],
+    queryFn: async () => apiClient.get('summary').json(),
+    refetchInterval: refreshInterval,
+  });
+
+  const { data: healthFull, isLoading: healthLoading } = useQuery<ClusterHealth>({
+    queryKey: ['health', 'full'],
+    queryFn: async () => apiClient.get('health/full').json<ClusterHealth>(),
+    refetchInterval: refreshInterval,
+  });
 
   if (summaryLoading || healthLoading || !summary) {
     return (
@@ -202,10 +283,10 @@ export function DashboardOverview() {
     );
   }
 
-  const healthStatus = summary.health_status;
+  const healthStatus = (summary as Record<string, unknown>).health_status as string;
   const healthColor = getHealthColor(healthStatus);
   const healthLabel = getHealthLabel(healthStatus);
-  const version = summary.version;
+  const version = (summary as Record<string, unknown>).version as string;
 
   // ── Status data ──
   const hostsCount = healthFull?.hosts;
@@ -228,7 +309,7 @@ export function DashboardOverview() {
 
   const rgwCount = healthFull?.rgw;
 
-  // MDS summary - use fs_map properly with mdsmap.info
+  // MDS summary
   const fsMap = healthFull?.fs_map as {
     standbys?: Array<{ name: string }>;
     filesystems?: Array<{
@@ -243,7 +324,7 @@ export function DashboardOverview() {
   let mdsNoFilesystems = false;
 
   if (fsMap?.standbys && !fsMap?.filesystems) {
-    mdsNoFilesystems = false; // standbys only, show "X up"
+    mdsNoFilesystems = false;
   } else if (fsMap?.filesystems && fsMap.filesystems.length === 0) {
     mdsNoFilesystems = true;
   } else if (fsMap?.filesystems) {
@@ -308,7 +389,7 @@ export function DashboardOverview() {
     mgrMap ||
     (rgwCount != null && featureToggles?.rgw) ||
     (fsMap && featureToggles?.cephfs) ||
-    (iscsiTotal > 0 && featureToggles?.iscsi);
+    (iscsiDaemons != null && featureToggles?.iscsi);
 
   const showCapacitySection = dfStats || objTotal > 0 || pgCategory.total > 0 || poolsCount > 0 || pgsPerOsd != null;
 
@@ -323,9 +404,12 @@ export function DashboardOverview() {
             <p className="text-sm text-muted-foreground">{version}</p>
           )}
         </div>
-        <Badge className={cn('text-sm px-3', healthColor)} variant="outline">
-          {healthStatus?.replace('HEALTH_', '') || 'UNKNOWN'}
-        </Badge>
+        <div className="flex items-center gap-3">
+          <RefreshSelector value={refreshInterval} onChange={setRefreshInterval} />
+          <Badge className={cn('text-sm px-3', healthColor)} variant="outline">
+            {healthStatus?.replace('HEALTH_', '') || 'UNKNOWN'}
+          </Badge>
+        </div>
       </div>
 
       {/* ── Status Section ── */}
@@ -419,7 +503,7 @@ export function DashboardOverview() {
           )}
 
           {/* iSCSI Gateways */}
-          {iscsiTotal > 0 && featureToggles?.iscsi && (
+          {iscsiDaemons != null && featureToggles?.iscsi && (
             <InfoCard title={t('nav.iscsiGateways')} titleLink="/block/iscsi">
               <span className="font-bold">{iscsiTotal}</span> total
               <br />
