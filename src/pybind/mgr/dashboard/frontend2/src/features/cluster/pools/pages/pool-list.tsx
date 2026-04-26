@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Database, RefreshCw, Trash2, Plus, Pencil } from 'lucide-react';
 import { usePools, useDeletePool, type Pool } from '../api/use-pool';
@@ -31,9 +32,9 @@ import { toast } from 'sonner';
 import { PoolForm } from '../components/pool-form';
 import { useErasureCodeProfiles as useEcProfiles } from '../api/use-ec-profile';
 
-function PoolTypeBadge({ type }: { type: string }) {
-  if (type === 'replicated') return <Badge variant="default">Replicated</Badge>;
-  if (type === 'erasure') return <Badge variant="secondary">Erasure Coded</Badge>;
+function PoolTypeBadge({ type, t }: { type: string; t: (key: string) => string }) {
+  if (type === 'replicated') return <Badge variant="default">{t('pools.replicated')}</Badge>;
+  if (type === 'erasure') return <Badge variant="secondary">{t('pools.erasureCoded')}</Badge>;
   return <Badge variant="outline">{type}</Badge>;
 }
 
@@ -75,6 +76,7 @@ function UsageBar({ pool }: { pool: Pool }) {
 }
 
 export function PoolListPage() {
+  const { t } = useTranslation();
   const { data: pools = [], isLoading, refetch } = usePools(true);
   const { data: ecProfiles } = useEcProfiles();
   const deletePool = useDeletePool();
@@ -89,10 +91,10 @@ export function PoolListPage() {
     if (!deleteConfirm) return;
     try {
       await deletePool.mutateAsync(deleteConfirm.pool_name);
-      toast.success(`Pool ${deleteConfirm.pool_name} deleted`);
+      toast.success(`${t('pools.title')} ${deleteConfirm.pool_name} ${t('common.deleted').toLowerCase()}`);
       setDeleteConfirm(null);
     } catch {
-      toast.error('Failed to delete pool');
+      toast.error(t('messages.error'));
     }
   };
 
@@ -104,13 +106,13 @@ export function PoolListPage() {
     },
     {
       accessorKey: 'pool_name',
-      header: 'Name',
+      header: t('pools.name'),
       cell: ({ row }) => <span className="font-medium">{row.original.pool_name}</span>,
     },
     {
       accessorKey: 'type',
-      header: 'Type',
-      cell: ({ row }) => <PoolTypeBadge type={row.original.type} />,
+      header: t('pools.type'),
+      cell: ({ row }) => <PoolTypeBadge type={row.original.type} t={t} />,
     },
     {
       id: 'data_protection',
@@ -119,7 +121,7 @@ export function PoolListPage() {
     },
     {
       accessorKey: 'size',
-      header: 'Size',
+      header: t('common.size'),
       cell: ({ row }) => row.original.size ?? '-',
     },
     {
@@ -144,18 +146,18 @@ export function PoolListPage() {
       header: 'Autoscale',
       cell: ({ row }) => (
         <Badge variant={row.original.pg_autoscale_mode === 'on' ? 'default' : 'outline'}>
-          {row.original.pg_autoscale_mode ?? 'unknown'}
+          {row.original.pg_autoscale_mode ?? t('common.unknown')}
         </Badge>
       ),
     },
     {
       id: 'usage',
-      header: 'Usage',
+      header: t('common.used'),
       cell: ({ row }) => <UsageBar pool={row.original} />,
     },
     {
       accessorKey: 'application_metadata',
-      header: 'Applications',
+      header: t('pools.applications'),
       cell: ({ row }) => {
         const apps = row.original.application_metadata;
         if (!apps?.length) return '-';
@@ -177,7 +179,7 @@ export function PoolListPage() {
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => setEditPool(row.original)}>
               <Pencil className="mr-2 h-4 w-4" />
-              Edit
+              {t('common.edit')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -185,7 +187,7 @@ export function PoolListPage() {
               onClick={() => setDeleteConfirm(row.original)}
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              Delete
+              {t('common.delete')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -198,7 +200,7 @@ export function PoolListPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Database className="h-5 w-5 text-muted-foreground" />
-          <h1 className="text-2xl font-semibold">Pools</h1>
+          <h1 className="text-2xl font-semibold">{t('pools.title')}</h1>
         </div>
         <div className="flex gap-2">
           <Select value={typeFilter} onValueChange={setTypeFilter}>
@@ -206,18 +208,18 @@ export function PoolListPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="replicated">Replicated</SelectItem>
-              <SelectItem value="erasure">Erasure Coded</SelectItem>
+              <SelectItem value="all">{t('common.all')}</SelectItem>
+              <SelectItem value="replicated">{t('pools.replicated')}</SelectItem>
+              <SelectItem value="erasure">{t('pools.erasureCoded')}</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
             <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
+            {t('common.refresh')}
           </Button>
           <Button size="sm" onClick={() => setShowCreate(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Create
+            {t('common.create')}
           </Button>
         </div>
       </div>
@@ -226,23 +228,23 @@ export function PoolListPage() {
         columns={columns}
         data={filteredPools}
         searchKey="pool_name"
-        searchPlaceholder="Filter by pool name..."
+        searchPlaceholder={`${t('common.filter')}...`}
         isLoading={isLoading}
       />
 
       <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Pool</DialogTitle>
+            <DialogTitle>{t('pools.delete')}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Are you sure you want to delete pool{' '}
-            <strong>{deleteConfirm?.pool_name}</strong>? All data in this pool will be lost.
+            {t('messages.confirmDelete')}{' '}
+            <strong>{deleteConfirm?.pool_name}</strong>?
           </p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>{t('common.cancel')}</Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deletePool.isPending}>
-              {deletePool.isPending ? 'Deleting...' : 'Delete'}
+              {deletePool.isPending ? `${t('common.delete')}...` : t('common.delete')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -251,7 +253,7 @@ export function PoolListPage() {
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Create Pool</DialogTitle>
+            <DialogTitle>{t('pools.create')}</DialogTitle>
           </DialogHeader>
           <PoolForm onSuccess={() => setShowCreate(false)} />
         </DialogContent>
@@ -260,7 +262,7 @@ export function PoolListPage() {
       <Dialog open={!!editPool} onOpenChange={() => setEditPool(null)}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Pool: {editPool?.pool_name}</DialogTitle>
+            <DialogTitle>{t('pools.edit')}: {editPool?.pool_name}</DialogTitle>
           </DialogHeader>
           {editPool && (
             <PoolForm initialData={editPool} onSuccess={() => setEditPool(null)} />

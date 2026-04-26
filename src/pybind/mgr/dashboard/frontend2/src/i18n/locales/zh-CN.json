@@ -60,7 +60,8 @@
     "expired": "已过期",
     "created": "已创建",
     "updated": "已更新",
-    "deleted": "已删除"
+    "deleted": "已删除",
+    "language": "语言"
   },
   "nav": {
     "dashboard": "仪表盘",
@@ -116,6 +117,7 @@
     "usernameRequired": "用户名不能为空"
   },
   "dashboard": {
+    "title": "仪表盘",
     "clusterStatus": "集群状态",
     "capacity": "容量",
     "performance": "性能",

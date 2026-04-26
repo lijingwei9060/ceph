@@ -66,6 +66,10 @@ ESLint 报告多个文件中存在未使用的导入和变量，共计 40+ 个�
 2. **React Compiler 兼容性警告**: React Hook Form 的 `watch()` 与 React Compiler 不完全兼容
 
 ### 建议
-- 多数页面移除了 `useTranslation`，未来如需支持 i18n 需要重新添加
+- ~~多数页面移除了 `useTranslation`，未来如需支持 i18n 需要重新添加~~ **已恢复** - 见 `i18n-restoration.md`
 - 部分组件缺少单元测试，建议后续添加
 - React Hook Form 相关警告可以通过重构代码或使用 `eslint-disable` 解决
+
+## 后续修复
+
+2026-04-26: 恢复了所有被移除的 `useTranslation` hooks，详见 `i18n-restoration.md`

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Files, RefreshCw } from 'lucide-react';
 import { useCephFsList, useCephFsDetail } from '../api/use-cephfs';
@@ -7,19 +8,20 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CephFsDetailDialog } from '../components/cephfs-detail';
 
-function FsMdsBadge({ fsId }: { fsId: number }) {
+function FsMdsBadge({ fsId, t }: { fsId: number; t: (key: string) => string }) {
   const { data } = useCephFsDetail(fsId);
   if (!data) return <span className="text-muted-foreground">-</span>;
   const activeCount = data.cephfs.ranks?.filter((r) => r.state === 'up:active').length ?? 0;
   const totalCount = data.cephfs.ranks?.length ?? 0;
   return (
     <Badge variant={activeCount > 0 ? 'default' : 'secondary'}>
-      {activeCount}/{totalCount} active
+      {activeCount}/{totalCount} {t('common.active').toLowerCase()}
     </Badge>
   );
 }
 
 export function CephFsListPage() {
+  const { t } = useTranslation();
   const { data: filesystems = [], isLoading, refetch } = useCephFsList();
   const [detailFsId, setDetailFsId] = useState<number | null>(null);
 
@@ -31,7 +33,7 @@ export function CephFsListPage() {
     },
     {
       accessorKey: 'name',
-      header: 'Name',
+      header: t('cephfs.name'),
       cell: ({ row }) => (
         <button
           className="font-medium text-primary hover:underline"
@@ -44,16 +46,16 @@ export function CephFsListPage() {
     {
       id: 'mds_rank',
       header: 'MDS Ranks',
-      cell: ({ row }) => <FsMdsBadge fsId={row.original.id} />,
+      cell: ({ row }) => <FsMdsBadge fsId={row.original.id} t={t} />,
     },
     {
       accessorKey: 'metadata_pool_name',
-      header: 'Metadata Pool',
+      header: t('cephfs.metadataPool'),
       cell: ({ row }) => row.original.metadata_pool_name || row.original.metadata_pool,
     },
     {
       id: 'data_pools',
-      header: 'Data Pools',
+      header: t('cephfs.dataPools'),
       cell: ({ row }) => {
         const pools = row.original.data_pool_names;
         if (!pools?.length) return '-';
@@ -72,11 +74,11 @@ export function CephFsListPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Files className="h-5 w-5 text-muted-foreground" />
-          <h1 className="text-2xl font-semibold">File Systems</h1>
+          <h1 className="text-2xl font-semibold">{t('cephfs.title')}</h1>
         </div>
         <Button variant="outline" size="sm" onClick={() => refetch()}>
           <RefreshCw className="mr-2 h-4 w-4" />
-          Refresh
+          {t('common.refresh')}
         </Button>
       </div>
 
@@ -84,7 +86,7 @@ export function CephFsListPage() {
         columns={columns}
         data={filesystems}
         searchKey="name"
-        searchPlaceholder="Filter by name..."
+        searchPlaceholder={`${t('common.filter')}...`}
         isLoading={isLoading}
       />
 

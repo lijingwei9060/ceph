@@ -65,7 +65,7 @@ i18n
     },
     // Log missing keys in development
     saveMissing: import.meta.env.DEV,
-    missingKeyHandler: (lngs, ns, key) => {
+    missingKeyHandler: (lngs, _ns, key) => {
       if (import.meta.env.DEV) {
         console.warn(`Missing translation key: ${key} for languages: ${lngs.join(', ')}`);
       }

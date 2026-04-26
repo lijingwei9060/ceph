@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Cloud, RefreshCw } from 'lucide-react';
 import { useRgwDaemons } from '../api/use-rgw-daemon';
@@ -8,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { RgwDaemonDetailDialog } from '../components/rgw-daemon-detail';
 
 export function RgwDaemonListPage() {
+  const { t } = useTranslation();
   const { data: daemons = [], isLoading, refetch } = useRgwDaemons();
   const [detailSvcId, setDetailSvcId] = useState<string | null>(null);
 
@@ -26,12 +28,12 @@ export function RgwDaemonListPage() {
     },
     {
       accessorKey: 'version',
-      header: 'Version',
+      header: t('rgw.daemon.version'),
       cell: ({ row }) => row.original.version ?? '-',
     },
     {
       accessorKey: 'server_hostname',
-      header: 'Host',
+      header: t('rgw.daemon.host'),
       cell: ({ row }) => row.original.server_hostname ?? '-',
     },
     {
@@ -41,7 +43,7 @@ export function RgwDaemonListPage() {
     },
     {
       accessorKey: 'zone_name',
-      header: 'Zone',
+      header: t('rgw.daemon.zone'),
       cell: ({ row }) => row.original.zone_name ?? '-',
     },
     {
@@ -49,8 +51,8 @@ export function RgwDaemonListPage() {
       header: 'Default',
       cell: ({ row }) => (
         row.original.default
-          ? <Badge variant="default">Yes</Badge>
-          : <Badge variant="secondary">No</Badge>
+          ? <Badge variant="default">{t('common.yes')}</Badge>
+          : <Badge variant="secondary">{t('common.no')}</Badge>
       ),
     },
   ];
@@ -60,11 +62,11 @@ export function RgwDaemonListPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Cloud className="h-5 w-5 text-muted-foreground" />
-          <h1 className="text-2xl font-semibold">RGW Daemons</h1>
+          <h1 className="text-2xl font-semibold">{t('rgw.daemon.title')}</h1>
         </div>
         <Button variant="outline" size="sm" onClick={() => refetch()}>
           <RefreshCw className="mr-2 h-4 w-4" />
-          Refresh
+          {t('common.refresh')}
         </Button>
       </div>
 
@@ -72,7 +74,7 @@ export function RgwDaemonListPage() {
         columns={columns}
         data={daemons}
         searchKey="id"
-        searchPlaceholder="Filter by daemon ID..."
+        searchPlaceholder={`${t('common.filter')}...`}
         isLoading={isLoading}
       />
 

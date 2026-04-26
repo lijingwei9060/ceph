@@ -60,7 +60,8 @@
     "expired": "Expired",
     "created": "Created",
     "updated": "Updated",
-    "deleted": "Deleted"
+    "deleted": "Deleted",
+    "language": "Language"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -116,6 +117,7 @@
     "usernameRequired": "Username is required"
   },
   "dashboard": {
+    "title": "Dashboard",
     "clusterStatus": "Cluster Status",
     "capacity": "Capacity",
     "performance": "Performance",

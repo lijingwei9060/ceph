@@ -20,6 +20,7 @@ import {
   LayoutDashboard, Server, Database, HardDrive, FolderOpen,
   Files, Cloud, Shield, LogOut, Bell, Activity,
 } from 'lucide-react';
+import { LanguageSwitcher } from '@/components/language-switcher';
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   LayoutDashboard, Server, Database, HardDrive, FolderOpen, Files, Cloud, Shield, Activity,
@@ -113,6 +114,7 @@ export function WorkbenchLayout() {
             <SidebarTrigger />
           </div>
           <div className="flex items-center gap-2">
+            <LanguageSwitcher />
             <Button variant="ghost" size="sm">
               <Bell className="h-4 w-4" />
             </Button>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Users, RefreshCw, Trash2, Plus, Pencil, Eye, MoreHorizontal } from 'lucide-react';
 import { useRgwUsers, useDeleteRgwUser, type RgwUser } from '../api/use-rgw-user';
@@ -24,6 +25,7 @@ import { RgwUserForm } from '../components/rgw-user-form';
 import { RgwUserDetailDialog } from '../components/rgw-user-detail';
 
 export function RgwUserListPage() {
+  const { t } = useTranslation();
   const { data: users = [], isLoading, refetch } = useRgwUsers();
   const deleteUser = useDeleteRgwUser();
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -35,17 +37,17 @@ export function RgwUserListPage() {
     if (!deleteConfirm) return;
     try {
       await deleteUser.mutateAsync(deleteConfirm);
-      toast.success(`User ${deleteConfirm} deleted`);
+      toast.success(`${t('rgw.user.title')} ${deleteConfirm} ${t('common.deleted').toLowerCase()}`);
       setDeleteConfirm(null);
     } catch {
-      toast.error('Failed to delete user');
+      toast.error(t('messages.error'));
     }
   };
 
   const columns: ColumnDef<(typeof users)[0]>[] = [
     {
       accessorKey: 'user_id',
-      header: 'User ID',
+      header: t('rgw.user.userId'),
       cell: ({ row }) => (
         <button
           className="font-mono font-medium text-primary hover:underline"
@@ -57,34 +59,34 @@ export function RgwUserListPage() {
     },
     {
       accessorKey: 'display_name',
-      header: 'Display Name',
+      header: t('rgw.user.displayName'),
       cell: ({ row }) => row.original.display_name || '-',
     },
     {
       accessorKey: 'email',
-      header: 'Email',
+      header: t('rgw.user.email'),
       cell: ({ row }) => row.original.email || '-',
     },
     {
       accessorKey: 'suspended',
-      header: 'Status',
+      header: t('common.status'),
       cell: ({ row }) => (
         row.original.suspended
-          ? <Badge variant="secondary">Suspended</Badge>
-          : <Badge variant="default">Active</Badge>
+          ? <Badge variant="secondary">{t('rgw.user.suspended')}</Badge>
+          : <Badge variant="default">{t('common.active')}</Badge>
       ),
     },
     {
       accessorKey: 'max_buckets',
-      header: 'Max Buckets',
+      header: t('rgw.user.maxBuckets'),
       cell: ({ row }) => {
         const v = row.original.max_buckets;
-        return v === -1 ? 'Disabled' : v === 0 ? 'Unlimited' : v;
+        return v === -1 ? t('common.disabled') : v === 0 ? 'Unlimited' : v;
       },
     },
     {
       accessorKey: 'keys',
-      header: 'Keys',
+      header: t('rgw.user.keys'),
       cell: ({ row }) => (
         <Badge variant="outline">{row.original.keys?.length ?? 0}</Badge>
       ),
@@ -102,11 +104,11 @@ export function RgwUserListPage() {
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => setDetailUser(row.original)}>
               <Eye className="mr-2 h-4 w-4" />
-              View Details
+              {t('common.details')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setEditUser(row.original)}>
               <Pencil className="mr-2 h-4 w-4" />
-              Edit
+              {t('common.edit')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -114,7 +116,7 @@ export function RgwUserListPage() {
               onClick={() => setDeleteConfirm(row.original.user_id)}
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              Delete
+              {t('common.delete')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -127,16 +129,16 @@ export function RgwUserListPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Users className="h-5 w-5 text-muted-foreground" />
-          <h1 className="text-2xl font-semibold">RGW Users</h1>
+          <h1 className="text-2xl font-semibold">{t('rgw.user.title')}</h1>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => refetch()}>
             <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
+            {t('common.refresh')}
           </Button>
           <Button size="sm" onClick={() => setShowCreate(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Create
+            {t('common.create')}
           </Button>
         </div>
       </div>
@@ -145,22 +147,22 @@ export function RgwUserListPage() {
         columns={columns}
         data={users}
         searchKey="user_id"
-        searchPlaceholder="Filter by user ID..."
+        searchPlaceholder={`${t('common.filter')}...`}
         isLoading={isLoading}
       />
 
       <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete RGW User</DialogTitle>
+            <DialogTitle>{t('rgw.user.delete')}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Are you sure you want to delete user <strong>{deleteConfirm}</strong>?
+            {t('messages.confirmDelete')} <strong>{deleteConfirm}</strong>?
           </p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>{t('common.cancel')}</Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleteUser.isPending}>
-              {deleteUser.isPending ? 'Deleting...' : 'Delete'}
+              {deleteUser.isPending ? `${t('common.delete')}...` : t('common.delete')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -169,7 +171,7 @@ export function RgwUserListPage() {
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Create RGW User</DialogTitle>
+            <DialogTitle>{t('rgw.user.create')}</DialogTitle>
           </DialogHeader>
           <RgwUserForm onSuccess={() => setShowCreate(false)} />
         </DialogContent>
@@ -178,7 +180,7 @@ export function RgwUserListPage() {
       <Dialog open={!!editUser} onOpenChange={() => setEditUser(null)}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit User: {editUser?.user_id}</DialogTitle>
+            <DialogTitle>{t('rgw.user.edit')}: {editUser?.user_id}</DialogTitle>
           </DialogHeader>
           {editUser && (
             <RgwUserForm initialData={editUser} onSuccess={() => setEditUser(null)} />

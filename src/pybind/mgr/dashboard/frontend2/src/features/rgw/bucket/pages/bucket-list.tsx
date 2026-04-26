@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { type ColumnDef } from '@tanstack/react-table';
 import { Archive, RefreshCw, Trash2, Plus, Eye, MoreHorizontal } from 'lucide-react';
 import { useRgwBuckets, useDeleteRgwBucket, useCreateRgwBucket } from '../api/use-rgw-bucket';
@@ -43,6 +44,7 @@ const bucketCreateSchema = z.object({
 type BucketCreateData = z.infer<typeof bucketCreateSchema>;
 
 export function RgwBucketListPage() {
+  const { t } = useTranslation();
   const { data: buckets = [], isLoading, refetch } = useRgwBuckets(true);
   const { data: userIds } = useRgwUserIds();
   const deleteBucket = useDeleteRgwBucket();
@@ -60,21 +62,21 @@ export function RgwBucketListPage() {
     if (!deleteConfirm) return;
     try {
       await deleteBucket.mutateAsync(deleteConfirm);
-      toast.success(`Bucket ${deleteConfirm} deleted`);
+      toast.success(`${t('rgw.bucket.title')} ${deleteConfirm} ${t('common.deleted').toLowerCase()}`);
       setDeleteConfirm(null);
     } catch {
-      toast.error('Failed to delete bucket');
+      toast.error(t('messages.error'));
     }
   };
 
   const handleCreate = async (data: BucketCreateData) => {
     try {
       await createBucket.mutateAsync({ bucket: data.bucket, uid: data.uid });
-      toast.success(`Bucket ${data.bucket} created`);
+      toast.success(`${t('rgw.bucket.title')} ${data.bucket} ${t('common.created').toLowerCase()}`);
       setShowCreate(false);
       form.reset();
     } catch {
-      toast.error('Failed to create bucket');
+      toast.error(t('messages.error'));
     }
   };
 
@@ -169,16 +171,16 @@ export function RgwBucketListPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Archive className="h-5 w-5 text-muted-foreground" />
-          <h1 className="text-2xl font-semibold">RGW Buckets</h1>
+          <h1 className="text-2xl font-semibold">{t('rgw.bucket.title')}</h1>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => refetch()}>
             <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
+            {t('common.refresh')}
           </Button>
           <Button size="sm" onClick={() => setShowCreate(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Create
+            {t('common.create')}
           </Button>
         </div>
       </div>
@@ -187,23 +189,22 @@ export function RgwBucketListPage() {
         columns={columns}
         data={buckets}
         searchKey="bucket"
-        searchPlaceholder="Filter by bucket name..."
+        searchPlaceholder={`${t('common.filter')}...`}
         isLoading={isLoading}
       />
 
       <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Bucket</DialogTitle>
+            <DialogTitle>{t('rgw.bucket.delete')}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Are you sure you want to delete bucket <strong>{deleteConfirm}</strong>?
-            This will permanently remove all objects.
+            {t('messages.confirmDelete')} <strong>{deleteConfirm}</strong>?
           </p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>{t('common.cancel')}</Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleteBucket.isPending}>
-              {deleteBucket.isPending ? 'Deleting...' : 'Delete'}
+              {deleteBucket.isPending ? `${t('common.delete')}...` : t('common.delete')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -212,7 +213,7 @@ export function RgwBucketListPage() {
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create Bucket</DialogTitle>
+            <DialogTitle>{t('rgw.bucket.create')}</DialogTitle>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleCreate)} className="space-y-4">
@@ -258,9 +259,9 @@ export function RgwBucketListPage() {
                 )}
               />
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => { setShowCreate(false); form.reset(); }}>Cancel</Button>
+                <Button type="button" variant="outline" onClick={() => { setShowCreate(false); form.reset(); }}>{t('common.cancel')}</Button>
                 <Button type="submit" disabled={createBucket.isPending}>
-                  {createBucket.isPending ? 'Creating...' : 'Create'}
+                  {createBucket.isPending ? `${t('common.create')}...` : t('common.create')}
                 </Button>
               </div>
             </form>
