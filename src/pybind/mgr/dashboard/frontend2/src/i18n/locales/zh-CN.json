@@ -435,5 +435,12 @@
     "minLength": "至少需要 {{min}} 个字符",
     "maxLength": "最多允许 {{max}} 个字符",
     "pattern": "格式无效"
+  },
+  "notifications": {
+    "title": "任务和通知",
+    "clearAll": "清除全部",
+    "empty": "暂无通知。",
+    "executingTasks": "执行中的任务",
+    "recent": "最近通知"
   }
 }

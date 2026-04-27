@@ -400,5 +400,12 @@
     "minLength": "Minimum {{min}} characters required",
     "maxLength": "Maximum {{max}} characters allowed",
     "pattern": "Invalid format"
+  },
+  "notifications": {
+    "title": "Tasks and Notifications",
+    "clearAll": "Clear All",
+    "empty": "There are no notifications.",
+    "executingTasks": "Running Tasks",
+    "recent": "Recent"
   }
 }

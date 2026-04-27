@@ -18,9 +18,10 @@ import { useNavigate, useLocation } from 'react-router';
 import { useAuth } from '@/hooks/use-auth';
 import {
   LayoutDashboard, Server, Database, HardDrive, FolderOpen,
-  Files, Cloud, Shield, LogOut, Bell, Activity,
+  Files, Cloud, Shield, LogOut, Activity,
 } from 'lucide-react';
 import { LanguageSwitcher } from '@/components/language-switcher';
+import { NotificationBell } from '@/features/health/components/notification-sidebar';
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   LayoutDashboard, Server, Database, HardDrive, FolderOpen, Files, Cloud, Shield, Activity,
@@ -115,9 +116,7 @@ export function WorkbenchLayout() {
           </div>
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
-            <Button variant="ghost" size="sm">
-              <Bell className="h-4 w-4" />
-            </Button>
+            <NotificationBell />
             <div className="text-sm text-muted-foreground">{username}</div>
             <Button variant="ghost" size="sm" onClick={() => logout()}>
               <LogOut className="mr-1 h-4 w-4" />
