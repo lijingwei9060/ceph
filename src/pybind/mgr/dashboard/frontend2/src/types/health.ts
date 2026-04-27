@@ -85,7 +85,7 @@ export interface ExecutingTask {
   name: string;
   metadata: Record<string, unknown>;
   description: string;
-  begin_time: number;
+  begin_time: string;
   progress: number;
 }
 
@@ -93,10 +93,11 @@ export interface FinishedTask {
   name: string;
   metadata: Record<string, unknown>;
   description: string;
-  begin_time: number;
-  end_time: number;
+  begin_time: string;
+  end_time: string;
+  duration: number;
   success: boolean;
-  exception?: { status: number; code: string; detail: string };
+  exception?: { detail?: string; code?: string; status?: number } | string;
 }
 
 export interface Summary {

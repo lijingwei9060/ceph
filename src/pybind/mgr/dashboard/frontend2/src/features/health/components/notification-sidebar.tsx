@@ -47,15 +47,17 @@ function timeAgo(dateStr: string): string {
 }
 
 function taskToNotification(task: FinishedTask): CdNotification {
+  const endTime = typeof task.end_time === 'string' ? task.end_time : new Date(task.end_time * 1000).toISOString();
+  const durationMs = task.duration != null ? task.duration * 1000 : undefined;
   return {
     id: `${task.name}-${task.begin_time}-${task.end_time}`,
     type: task.success ? 'success' : 'error',
     title: task.description || task.name,
     message: task.exception
-      ? `${task.exception.code}: ${task.exception.detail}`
+      ? (task.exception.detail ?? (typeof task.exception === 'string' ? task.exception : JSON.stringify(task.exception)))
       : undefined,
-    timestamp: new Date(task.end_time * 1000).toISOString(),
-    duration: (task.end_time - task.begin_time) * 1000,
+    timestamp: endTime,
+    duration: durationMs,
     application: 'ceph',
   };
 }
@@ -172,7 +174,7 @@ export function NotificationSidebar({ open, onOpenChange }: { open: boolean; onO
                         </div>
                       )}
                       <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(task.begin_time * 1000).toLocaleTimeString()}
+                        {new Date(task.begin_time).toLocaleTimeString()}
                         {task.progress != null && ` · ${Math.round(task.progress)}%`}
                       </p>
                     </div>
