@@ -234,7 +234,21 @@
     "replicatedSize": "副本大小",
     "ecProfile": "纠删码配置",
     "ecK": "K",
-    "ecM": "M"
+    "ecM": "M",
+    "pgAutoscaleMode": "PG 自动缩放模式",
+    "pgCalculated": "计算值",
+    "crushRule": "CRUSH 规则",
+    "ecOverwrites": "启用 EC 覆写",
+    "compressionMode": "压缩模式",
+    "compressionAlgorithm": "算法",
+    "compressionMinBlobSize": "最小 Blob 大小",
+    "compressionMaxBlobSize": "最大 Blob 大小",
+    "compressionRatio": "压缩比 (0-1)",
+    "quotaMaxBytes": "最大字节 (0 = 无限制)",
+    "quotaMaxObjects": "最大对象数 (0 = 无限制)",
+    "createEcProfile": "创建纠删码配置",
+    "ecProfileName": "配置名称",
+    "dataProtection": "数据保护"
   },
   "rbd": {
     "title": "RBD 镜像",

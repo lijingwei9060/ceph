@@ -116,7 +116,7 @@ export function PoolListPage() {
     },
     {
       id: 'data_protection',
-      header: 'Data Protection',
+      header: t('pools.dataProtection'),
       cell: ({ row }) => <DataProtectionCell pool={row.original} ecProfiles={ecProfiles} />,
     },
     {
@@ -126,12 +126,12 @@ export function PoolListPage() {
     },
     {
       accessorKey: 'crush_rule',
-      header: 'CRUSH Rule',
+      header: t('pools.crushRule'),
       cell: ({ row }) => row.original.crush_rule ?? '-',
     },
     {
       accessorKey: 'pg_num',
-      header: 'PGs',
+      header: t('pools.pgNum'),
       cell: ({ row }) => (
         <span>
           {row.original.pg_num}
@@ -143,7 +143,7 @@ export function PoolListPage() {
     },
     {
       accessorKey: 'pg_autoscale_mode',
-      header: 'Autoscale',
+      header: t('pools.pgAutoscaleMode'),
       cell: ({ row }) => (
         <Badge variant={row.original.pg_autoscale_mode === 'on' ? 'default' : 'outline'}>
           {row.original.pg_autoscale_mode ?? t('common.unknown')}

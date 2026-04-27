@@ -234,7 +234,21 @@
     "replicatedSize": "Replicated Size",
     "ecProfile": "EC Profile",
     "ecK": "K",
-    "ecM": "M"
+    "ecM": "M",
+    "pgAutoscaleMode": "PG Autoscale Mode",
+    "pgCalculated": "Calculated",
+    "crushRule": "CRUSH Rule",
+    "ecOverwrites": "Enable EC Overwrites",
+    "compressionMode": "Compression Mode",
+    "compressionAlgorithm": "Algorithm",
+    "compressionMinBlobSize": "Min Blob Size",
+    "compressionMaxBlobSize": "Max Blob Size",
+    "compressionRatio": "Compression Ratio (0-1)",
+    "quotaMaxBytes": "Max Bytes (0 = unlimited)",
+    "quotaMaxObjects": "Max Objects (0 = unlimited)",
+    "createEcProfile": "Create Erasure Code Profile",
+    "ecProfileName": "Profile Name",
+    "dataProtection": "Data Protection"
   },
   "rbd": {
     "title": "RBD Images",

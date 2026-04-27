@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   useCreatePool,
   useUpdatePool,
@@ -33,6 +34,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { calculatePgNumReplicated, calculatePgNumErasure } from './pg-calculator';
+
+/** Map human-readable pool_type to the integer the backend expects */
+const POOL_TYPE_MAP: Record<string, number> = { replicated: 1, erasure: 3 };
 
 const poolFormSchema = z.object({
   pool: z.string().min(1, 'Pool name is required').regex(/^[.A-Za-z0-9_/-]+$/, 'Invalid characters'),
@@ -74,6 +78,7 @@ export function PoolForm({
   initialData?: Pool;
   onSuccess: () => void;
 }) {
+  const { t } = useTranslation();
   const isEdit = !!initialData;
   const createPool = useCreatePool();
   const updatePool = useUpdatePool();
@@ -128,8 +133,8 @@ export function PoolForm({
     try {
       const payload: Record<string, unknown> = {
         pool: data.pool,
-        pool_type: data.pool_type,
-        pg_num: data.pg_autoscale_mode === 'on' ? undefined : data.pg_num,
+        pool_type: POOL_TYPE_MAP[data.pool_type] ?? 1,
+        pg_num: data.pg_autoscale_mode === 'on' ? 1 : data.pg_num,
         pg_autoscale_mode: data.pg_autoscale_mode,
       };
 
@@ -143,7 +148,7 @@ export function PoolForm({
         payload.rule_name = data.crush_rule;
       }
       if (data.pool_type === 'erasure' && data.ec_overwrites) {
-        payload.flags = 'ec_overwrites';
+        payload.flags = ['ec_overwrites'];
       }
       if (data.application_metadata?.length) {
         payload.application_metadata = data.application_metadata;
@@ -155,7 +160,7 @@ export function PoolForm({
         if (data.compression_algorithm) payload.compression_algorithm = data.compression_algorithm;
         if (data.compression_min_blob_size) payload.compression_min_blob_size = parseBinarySize(data.compression_min_blob_size);
         if (data.compression_max_blob_size) payload.compression_max_blob_size = parseBinarySize(data.compression_max_blob_size);
-        if (data.compression_ratio) payload.compression_ratio = parseFloat(data.compression_ratio);
+        if (data.compression_ratio) payload.compression_required_ratio = parseFloat(data.compression_ratio);
       } else if (info?.is_all_bluestore && isEdit && data.compression_mode === 'none') {
         payload.compression_mode = 'unset';
       }
@@ -170,14 +175,14 @@ export function PoolForm({
 
       if (isEdit) {
         await updatePool.mutateAsync({ poolName: initialData!.pool_name, ...payload });
-        toast.success(`Pool ${data.pool} updated`);
+        toast.success(t('messages.success'));
       } else {
         await createPool.mutateAsync(payload);
-        toast.success(`Pool ${data.pool} created`);
+        toast.success(t('messages.success'));
       }
       onSuccess();
     } catch {
-      toast.error(isEdit ? 'Failed to update pool' : 'Failed to create pool');
+      toast.error(isEdit ? t('messages.error') : t('messages.error'));
     }
   };
 
@@ -190,13 +195,12 @@ export function PoolForm({
     <>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          {/* Basic Configuration */}
           <FormField
             control={form.control}
             name="pool"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Pool Name</FormLabel>
+                <FormLabel>{t('pools.name')}</FormLabel>
                 <FormControl>
                   <Input {...field} disabled={isEdit} className="font-mono" placeholder="my-pool" />
                 </FormControl>
@@ -211,14 +215,14 @@ export function PoolForm({
               name="pool_type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Type</FormLabel>
+                  <FormLabel>{t('pools.type')}</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isEdit}>
                     <FormControl>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="replicated">Replicated</SelectItem>
-                      <SelectItem value="erasure">Erasure Coded</SelectItem>
+                      <SelectItem value="replicated">{t('pools.replicated')}</SelectItem>
+                      <SelectItem value="erasure">{t('pools.erasureCoded')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </FormItem>
@@ -230,7 +234,7 @@ export function PoolForm({
               name="pg_autoscale_mode"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>PG Autoscale</FormLabel>
+                  <FormLabel>{t('pools.pgAutoscaleMode')}</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger><SelectValue /></SelectTrigger>
@@ -252,15 +256,15 @@ export function PoolForm({
               name="pg_num"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>PG Num</FormLabel>
+                  <FormLabel>{t('pools.pgNum')}</FormLabel>
                   <FormControl>
                     <Input {...field} type="number" min={1} />
                   </FormControl>
                   <p className="text-xs text-muted-foreground">
-                    Calculated: {poolType === 'replicated'
+                    {t('pools.pgCalculated')}: {poolType === 'replicated'
                       ? calculatePgNumReplicated(info?.osd_count ?? 0, size)
                       : ecProfile ? calculatePgNumErasure(info?.osd_count ?? 0, ecProfile.k, ecProfile.m) : '-'
-                    } PGs (OSD count: {info?.osd_count ?? '?'})
+                    } PGs (OSD: {info?.osd_count ?? '?'})
                   </p>
                   <FormMessage />
                 </FormItem>
@@ -273,16 +277,16 @@ export function PoolForm({
             name="crush_rule"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>CRUSH Rule</FormLabel>
+                <FormLabel>{t('pools.crushRule')}</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value || undefined}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Default" />
+                      <SelectValue placeholder={t('common.all')} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
                     {crushRules?.map((rule) => (
-                      <SelectItem key={rule.name} value={rule.name}>{rule.name}</SelectItem>
+                      <SelectItem key={rule.rule_name} value={rule.rule_name}>{rule.rule_name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -290,14 +294,13 @@ export function PoolForm({
             )}
           />
 
-          {/* Replicated Config */}
           {poolType === 'replicated' && (
             <FormField
               control={form.control}
               name="size"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Replicated Size</FormLabel>
+                  <FormLabel>{t('pools.replicatedSize')}</FormLabel>
                   <FormControl>
                     <Input {...field} type="number" min={1} max={10} />
                   </FormControl>
@@ -307,7 +310,6 @@ export function PoolForm({
             />
           )}
 
-          {/* Erasure Coded Config */}
           {poolType === 'erasure' && (
             <>
               <div className="flex items-end gap-2">
@@ -316,11 +318,11 @@ export function PoolForm({
                   name="erasure_code_profile"
                   render={({ field }) => (
                     <FormItem className="flex-1">
-                      <FormLabel>Erasure Code Profile</FormLabel>
+                      <FormLabel>{t('pools.ecProfile')}</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value || undefined}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select profile" />
+                            <SelectValue placeholder={t('common.select')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -337,7 +339,7 @@ export function PoolForm({
                 />
                 {!isEdit && (
                   <Button type="button" variant="outline" size="sm" className="mb-5" onClick={() => setShowEcForm(true)}>
-                    <Plus className="h-4 w-4 mr-1" /> New
+                    <Plus className="h-4 w-4 mr-1" /> {t('common.create')}
                   </Button>
                 )}
               </div>
@@ -359,7 +361,7 @@ export function PoolForm({
                       <FormControl>
                         <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                       </FormControl>
-                      <FormLabel className="!mt-0">Enable EC Overwrites</FormLabel>
+                      <FormLabel className="!mt-0">{t('pools.ecOverwrites')}</FormLabel>
                     </FormItem>
                   )}
                 />
@@ -367,16 +369,15 @@ export function PoolForm({
             </>
           )}
 
-          {/* Compression */}
           {info?.is_all_bluestore && (
             <div className="border rounded p-3 space-y-3">
-              <h4 className="text-sm font-medium">Compression</h4>
+              <h4 className="text-sm font-medium">{t('pools.compression')}</h4>
               <FormField
                 control={form.control}
                 name="compression_mode"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Compression Mode</FormLabel>
+                    <FormLabel>{t('pools.compressionMode')}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger><SelectValue /></SelectTrigger>
@@ -398,10 +399,10 @@ export function PoolForm({
                     name="compression_algorithm"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Algorithm</FormLabel>
+                        <FormLabel>{t('pools.compressionAlgorithm')}</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value || undefined}>
                           <FormControl>
-                            <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                            <SelectTrigger><SelectValue placeholder={t('common.select')} /></SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             {(info.compression_algorithms ?? ['lz4', 'snappy', 'zlib', 'zstd']).map((a) => (
@@ -418,7 +419,7 @@ export function PoolForm({
                       name="compression_min_blob_size"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs">Min Blob Size</FormLabel>
+                          <FormLabel className="text-xs">{t('pools.compressionMinBlobSize')}</FormLabel>
                           <FormControl>
                             <Input {...field} className="h-8 text-xs font-mono" placeholder="e.g. 128KiB" />
                           </FormControl>
@@ -430,7 +431,7 @@ export function PoolForm({
                       name="compression_max_blob_size"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs">Max Blob Size</FormLabel>
+                          <FormLabel className="text-xs">{t('pools.compressionMaxBlobSize')}</FormLabel>
                           <FormControl>
                             <Input {...field} className="h-8 text-xs font-mono" placeholder="e.g. 512KiB" />
                           </FormControl>
@@ -443,7 +444,7 @@ export function PoolForm({
                     name="compression_ratio"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-xs">Compression Ratio (0-1)</FormLabel>
+                        <FormLabel className="text-xs">{t('pools.compressionRatio')}</FormLabel>
                         <FormControl>
                           <Input {...field} type="number" min={0} max={1} step={0.1} className="h-8 text-xs" />
                         </FormControl>
@@ -455,16 +456,15 @@ export function PoolForm({
             </div>
           )}
 
-          {/* Quotas */}
           <div className="border rounded p-3 space-y-3">
-            <h4 className="text-sm font-medium">Quotas</h4>
+            <h4 className="text-sm font-medium">{t('pools.quota')}</h4>
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="quota_max_bytes"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Max Bytes (0 = unlimited)</FormLabel>
+                    <FormLabel>{t('pools.quotaMaxBytes')}</FormLabel>
                     <FormControl>
                       <Input {...field} className="font-mono text-xs" placeholder="e.g. 10GiB" />
                     </FormControl>
@@ -476,7 +476,7 @@ export function PoolForm({
                 name="quota_max_objects"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Max Objects (0 = unlimited)</FormLabel>
+                    <FormLabel>{t('pools.quotaMaxObjects')}</FormLabel>
                     <FormControl>
                       <Input {...field} type="number" min={0} />
                     </FormControl>
@@ -486,9 +486,8 @@ export function PoolForm({
             </div>
           </div>
 
-          {/* Applications */}
           <div>
-            <FormLabel className="text-sm">Applications</FormLabel>
+            <label className="text-sm font-medium">{t('pools.applications')}</label>
             <div className="flex gap-2 mt-1 flex-wrap">
               {APPLICATIONS.map((app) => {
                 const selected = form.watch('application_metadata')?.includes(app) ?? false;
@@ -511,9 +510,9 @@ export function PoolForm({
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onSuccess}>Cancel</Button>
+            <Button type="button" variant="outline" onClick={onSuccess}>{t('common.cancel')}</Button>
             <Button type="submit" disabled={isPending}>
-              {isPending ? (isEdit ? 'Updating...' : 'Creating...') : (isEdit ? 'Update' : 'Create')}
+              {isPending ? t('common.loading') : (isEdit ? t('common.save') : t('common.create'))}
             </Button>
           </div>
         </form>
@@ -526,7 +525,6 @@ export function PoolForm({
           form.setValue('erasure_code_profile', name);
           setShowEcForm(false);
         }}
-        info={info}
       />
     </>
   );
@@ -557,6 +555,7 @@ function EcProfileCreateDialog({
   onClose: () => void;
   onCreated: (name: string) => void;
 }) {
+  const { t } = useTranslation();
   const createEcProfile = useCreateErasureCodeProfile();
   const [name, setName] = useState('');
   const [plugin, setPlugin] = useState('jerasure');
@@ -580,11 +579,11 @@ function EcProfileCreateDialog({
       const data: Record<string, unknown> = { name, k, m, plugin };
       if (technique) data.technique = technique;
       await createEcProfile.mutateAsync(data);
-      toast.success(`EC profile ${name} created`);
+      toast.success(t('messages.success'));
       onCreated(name);
       setName('');
     } catch {
-      toast.error('Failed to create EC profile');
+      toast.error(t('messages.error'));
     }
   };
 
@@ -592,11 +591,11 @@ function EcProfileCreateDialog({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Create Erasure Code Profile</DialogTitle>
+          <DialogTitle>{t('pools.createEcProfile')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Profile Name</label>
+            <label className="text-sm font-medium">{t('pools.ecProfileName')}</label>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="my-ec-profile" className="font-mono" />
           </div>
           <div className="grid grid-cols-3 gap-4">
@@ -612,11 +611,11 @@ function EcProfileCreateDialog({
               </Select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">k (data)</label>
+              <label className="text-sm font-medium">{t('pools.ecK')}</label>
               <Input type="number" min={2} value={k} onChange={(e) => setK(parseInt(e.target.value) || 2)} />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">m (coding)</label>
+              <label className="text-sm font-medium">{t('pools.ecM')}</label>
               <Input type="number" min={1} value={m} onChange={(e) => setM(parseInt(e.target.value) || 1)} />
             </div>
           </div>
@@ -636,9 +635,9 @@ function EcProfileCreateDialog({
           )}
 
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <Button variant="outline" onClick={onClose}>{t('common.cancel')}</Button>
             <Button onClick={handleCreate} disabled={createEcProfile.isPending || !name}>
-              {createEcProfile.isPending ? 'Creating...' : 'Create'}
+              {createEcProfile.isPending ? t('common.loading') : t('common.create')}
             </Button>
           </div>
         </div>

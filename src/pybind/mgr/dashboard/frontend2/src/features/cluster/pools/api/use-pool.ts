@@ -43,7 +43,9 @@ export interface PoolStats {
 }
 
 export interface CrushRuleInfo {
-  name: string;
+  rule_id: number;
+  rule_name: string;
+  type: number;
   usable_size?: number;
 }
 
