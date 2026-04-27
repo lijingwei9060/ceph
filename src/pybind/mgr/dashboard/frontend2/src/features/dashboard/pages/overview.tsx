@@ -82,13 +82,14 @@ interface InfoCardProps {
   titleLink?: string;
   children: React.ReactNode;
   className?: string;
+  height?: string;
 }
 
-function InfoCard({ title, titleLink, children, className }: InfoCardProps) {
+function InfoCard({ title, titleLink, children, className, height }: InfoCardProps) {
   const navigate = useNavigate();
 
   return (
-    <Card className={cn('w-[220px]', className)}>
+    <Card className={cn('w-[220px] flex flex-col', className)} style={height ? { height } : undefined}>
       <CardHeader className="pb-1 pt-3 px-4">
         <CardTitle className="text-sm font-medium">
           {titleLink ? (
@@ -104,7 +105,7 @@ function InfoCard({ title, titleLink, children, className }: InfoCardProps) {
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="px-4 pb-3 text-sm">
+      <CardContent className="px-4 pb-3 text-sm flex-1 flex items-center">
         {children}
       </CardContent>
     </Card>
@@ -195,7 +196,7 @@ function DonutCard({ title, titleLink, centerLabel, data }: DonutCardProps) {
     : centerLabel;
 
   return (
-    <InfoCard title={title} titleLink={titleLink} className="w-[260px]">
+    <InfoCard title={title} titleLink={titleLink} className="w-[260px]" height="160px">
       <div className="flex items-center gap-2">
         <div className="w-[120px] h-[120px] shrink-0 relative">
           <ResponsiveContainer width="100%" height="100%">
@@ -550,14 +551,14 @@ export function DashboardOverview() {
 
           {/* Pools */}
           {poolsCount > 0 && (
-            <InfoCard title={t('nav.pools')} titleLink="/pools">
+            <InfoCard title={t('nav.pools')} titleLink="/pools" className="w-[260px]" height="160px">
               <span className="font-bold text-lg">{poolsCount}</span>
             </InfoCard>
           )}
 
           {/* PGs per OSD */}
           {pgsPerOsd != null && (
-            <InfoCard title={t('dashboard.pgsPerOsd', 'PGs per OSD')}>
+            <InfoCard title={t('dashboard.pgsPerOsd', 'PGs per OSD')} className="w-[260px]" height="160px">
               <span className="font-bold text-lg">{formatDimless(pgsPerOsd)}</span>
             </InfoCard>
           )}
@@ -593,14 +594,14 @@ export function DashboardOverview() {
 
           {/* Recovery Throughput */}
           {clientPerf && (
-            <InfoCard title={t('dashboard.recoveryThroughput')} className="w-[260px]">
+            <InfoCard title={t('dashboard.recoveryThroughput')} className="w-[260px]" height="160px">
               <span className="font-bold text-lg">{formatDimlessBinary(recoveryBytes)}/s</span>
             </InfoCard>
           )}
 
           {/* Scrubbing */}
           {scrubStatus != null && (
-            <InfoCard title={t('dashboard.scrubbing')} className="w-[260px]">
+            <InfoCard title={t('dashboard.scrubbing')} className="w-[260px]" height="160px">
               <span className="font-bold text-lg">{String(scrubStatus)}</span>
             </InfoCard>
           )}

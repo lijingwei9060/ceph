@@ -27,8 +27,7 @@ export function LoginPage() {
   const setAuth = useAuthStore((s) => s.setAuth);
   const [banner, setBanner] = useState('');
   const [loading, setLoading] = useState(false);
-  const [checking, setChecking] = useState(true);
-  const [showLoginForm, setShowLoginForm] = useState(false);
+  const [ssoUrl, setSsoUrl] = useState<string | null>(null);
 
   const {
     register,
@@ -40,8 +39,14 @@ export function LoginPage() {
   });
 
   useEffect(() => {
-    // Check auth status on load to determine SSO flow
-    const checkAuth = async () => {
+    // If already authenticated, redirect to dashboard
+    if (useAuthStore.getState().isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+      return;
+    }
+
+    // Check if SSO is configured
+    const checkSso = async () => {
       try {
         // Extract token from URL hash if present (SSO callback)
         let token: string | undefined;
@@ -56,15 +61,15 @@ export function LoginPage() {
 
         if (response.login_url) {
           if (response.login_url === '#/login') {
-            // SSO not configured, show login form
-            setShowLoginForm(true);
+            // SSO not configured, show login form (default state)
           } else {
             // SSO configured, redirect to SSO login URL
+            setSsoUrl(response.login_url);
             window.location.replace(response.login_url);
             return;
           }
         } else if (response.username && response.permissions) {
-          // Already authenticated
+          // Already authenticated via token
           setAuth({
             username: response.username,
             permissions: response.permissions,
@@ -74,28 +79,17 @@ export function LoginPage() {
           });
           navigate('/dashboard', { replace: true });
           return;
-        } else {
-          // No login_url and no auth data, show login form
-          setShowLoginForm(true);
         }
+        // For 401 or no SSO: just show the login form (default state)
       } catch {
-        // Error checking auth, show login form
-        setShowLoginForm(true);
-      } finally {
-        setChecking(false);
+        // 401 or network error — show login form (default state)
       }
     };
 
-    // Only check auth if not already authenticated
-    if (!useAuthStore.getState().isAuthenticated) {
-      checkAuth();
-    } else {
-      navigate('/dashboard', { replace: true });
-    }
+    checkSso();
 
     // Load custom banner
     uiApiClient.get('login/custom_banner').text().then((text) => {
-      // Filter out "null" string (API returns null when not configured)
       if (text && text !== 'null') {
         setBanner(text);
       }
@@ -113,7 +107,8 @@ export function LoginPage() {
     }
   };
 
-  if (checking) {
+  // SSO redirect in progress
+  if (ssoUrl) {
     return (
       <Card className="w-full max-w-sm">
         <CardContent className="pt-6">
@@ -121,10 +116,6 @@ export function LoginPage() {
         </CardContent>
       </Card>
     );
-  }
-
-  if (!showLoginForm) {
-    return null;
   }
 
   return (

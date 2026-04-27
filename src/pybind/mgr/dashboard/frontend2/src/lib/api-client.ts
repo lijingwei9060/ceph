@@ -29,7 +29,11 @@ function createUnauthorizedHook() {
     (_request: Request, _options: RequestInit, response: Response) => {
       if (response.status === 401) {
         localStorage.removeItem(STORAGE_KEY);
-        window.location.hash = '#/login';
+        // Only redirect if not already on the login page (hash router: path is in the hash)
+        const currentPath = window.location.hash.replace('#', '') || '/';
+        if (!currentPath.startsWith('/login') && !currentPath.startsWith('/change-password')) {
+          window.location.hash = '#/login';
+        }
         return new Response(null, { status: 401 });
       }
       return response;
